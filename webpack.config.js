@@ -34,7 +34,7 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: "BubbleShooter VR",
+      title: "B VR",
       inject: "body",
       template: "./src/index.html"
     })
