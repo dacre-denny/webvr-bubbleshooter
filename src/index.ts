@@ -7,9 +7,9 @@ const enum Colors {
   YELLOW
 }
 
-const GAME_WIDTH = 20;
-const GAME_DEPTH = 20;
-const GAME_HEIGHT = 15;
+const GAME_WIDTH = 5;
+const GAME_DEPTH = 5;
+const GAME_HEIGHT = 10;
 
 class Game {
   private canvas: HTMLCanvasElement;
@@ -20,6 +20,7 @@ class Game {
   private n: number = 0;
 
   private debug: BABYLON.Mesh;
+  private boundary: BABYLON.Mesh;
 
   private launcher: BABYLON.Mesh;
   private gameBoard: BABYLON.InstancedMesh[] = [];
@@ -37,15 +38,6 @@ class Game {
     const bubbleMesh = this.bubbles.get(bubbleColor);
 
     const instance = bubbleMesh.createInstance(`bubble${id}`);
-
-    const imposter = new BABYLON.PhysicsImpostor(
-      instance,
-      BABYLON.PhysicsImpostor.SphereImpostor,
-      { mass: 1, friction: 0.0, restitution: 0.1, damping: 0 },
-      this.scene
-    );
-
-    instance.physicsImpostor = imposter;
 
     return instance;
   }
@@ -76,7 +68,7 @@ class Game {
           const meshSrc = this.gameBoard[idxSrc];
 
           if (meshSrc) {
-            meshSrc.position.y = meshSrc.position.y - 0.5;
+            meshSrc.position.y = meshSrc.position.y - 1;
           }
 
           this.gameBoard[idxDst] = meshSrc;
@@ -91,9 +83,18 @@ class Game {
         const z = j - GAME_DEPTH / 2;
 
         const bubble = this.getBubble(this.n++);
-        bubble.position.y = GAME_HEIGHT * 0.5;
-        bubble.position.x = x;
-        bubble.position.z = z;
+        bubble.position.y = GAME_HEIGHT;
+        bubble.position.x = x + 0.5;
+        bubble.position.z = z + 0.5;
+
+        const imposter = new BABYLON.PhysicsImpostor(
+          bubble,
+          BABYLON.PhysicsImpostor.SphereImpostor,
+          { mass: 0, friction: 0.0, restitution: 0, damping: 0 },
+          this.scene
+        );
+
+        bubble.physicsImpostor = imposter;
 
         this.gameBoard[this.getBubbleIndex(i, j, 0)] = bubble;
       }
@@ -136,14 +137,16 @@ class Game {
   }
 
   shoot() {
-    var box = BABYLON.MeshBuilder.CreateIcoSphere(
-      `Box${this.n++}`,
-      { radius: 0.5, subdivisions: 1 },
-      this.scene
-    );
+    const bullet = this.getBubble(this.n++);
+
+    // var bullet = BABYLON.MeshBuilder.CreateIcoSphere(
+    //   `Box${this.n++}`,
+    //   { radius: 0.5, subdivisions: 1 },
+    //   this.scene
+    // );
 
     const imposter = new BABYLON.PhysicsImpostor(
-      box,
+      bullet,
       BABYLON.PhysicsImpostor.SphereImpostor,
       { mass: 1, friction: 0.0, restitution: 1, damping: 0 },
       this.scene
@@ -156,7 +159,66 @@ class Game {
 
     imposter.applyForce(forceDirection.scale(550), BABYLON.Vector3.Zero());
 
-    box.physicsImpostor = imposter;
+    bullet.physicsImpostor = imposter;
+    bullet.checkCollisions = true;
+
+    const tgts = this.gameBoard
+      .filter(b => !!b)
+      .map(bubble => {
+        return bubble.physicsImpostor;
+      });
+
+    const handler = (
+      collider: BABYLON.PhysicsImpostor,
+      other: BABYLON.PhysicsImpostor
+    ) => {
+      console.log("x");
+
+      this.onBubbleCollide(
+        collider.object as BABYLON.Mesh,
+        other.object as BABYLON.Mesh
+      );
+
+      const { physicsImpostor } = bullet;
+      physicsImpostor.unregisterOnPhysicsCollide(tgts, handler);
+    };
+
+    bullet.physicsImpostor.registerOnPhysicsCollide(tgts, handler);
+  }
+
+  onBubbleCollide(bullet: BABYLON.Mesh, other: BABYLON.Mesh) {
+    const diff = other.position.subtract(bullet.position);
+
+    const m = {
+      L: BABYLON.Vector3.Left(),
+      R: BABYLON.Vector3.Right(),
+      U: BABYLON.Vector3.Up(),
+      D: BABYLON.Vector3.Down(),
+      B: BABYLON.Vector3.Backward(),
+      F: BABYLON.Vector3.Forward()
+    };
+
+    const [max] = Object.entries(m).sort((e0, e1) =>
+      BABYLON.Vector3.Dot(e0[1], diff) > BABYLON.Vector3.Dot(e1[1], diff)
+        ? 1
+        : -1
+    );
+    const key = max[0];
+
+    const vec = (m as any)[key] as BABYLON.Vector3;
+
+    const { physicsImpostor } = bullet;
+    physicsImpostor.setMass(0);
+    physicsImpostor.setLinearVelocity(BABYLON.Vector3.Zero());
+
+    bullet.position.copyFrom(other.position.add(vec));
+
+    // if(bullet.material.id === other.material.id) {
+
+    // }
+    // else {
+
+    // }
   }
 
   createLauncher() {
@@ -253,6 +315,7 @@ class Game {
     const bounds = new BABYLON.Mesh("bound", this.scene);
 
     for (const side of sides) {
+      side.position.y += GAME_HEIGHT * 0.5;
       bounds.addChild(side);
     }
 
@@ -263,6 +326,7 @@ class Game {
         { mass: 0, damping: 0, friction: 0, restitution: 0 },
         this.scene
       );
+      side.checkCollisions = true;
     }
 
     bounds.physicsImpostor = new BABYLON.PhysicsImpostor(
@@ -271,11 +335,16 @@ class Game {
       { mass: 0, damping: 0, friction: 0, restitution: 1 },
       this.scene
     );
+    bounds.checkCollisions = true;
+
+    this.boundary = bounds;
   }
 
   createScene(): void {
     this.scene = new BABYLON.Scene(this.engine);
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
+
+    this.scene.executeWhenReady(() => {});
 
     this.debug = BABYLON.MeshBuilder.CreateBox(
       "debug",
@@ -298,18 +367,20 @@ class Game {
 
     this.gameBoardStep();
     setInterval(() => {
-      //this.gameBoardStep();
+      this.gameBoardStep();
     }, 1000);
-    var environment = this.scene.createDefaultEnvironment({
-      enableGroundShadow: true,
-      groundYBias: 1
-    });
-    environment.setMainColor(BABYLON.Color3.FromHexString("#74b9ff"));
-
-    // const vrHelper = this._scene.createDefaultVRExperience({
-    //   createDeviceOrientationCamera: false
+    // var environment = this.scene.createDefaultEnvironment({
+    //   enableGroundShadow: true,
+    //   groundYBias: 1
     // });
-    // vrHelper.enableTeleportation({ floorMeshes: [environment.ground] });
+    // environment.setMainColor(BABYLON.Color3.FromHexString("#74b9ff"));
+
+    /*
+    const vrHelper = this.scene.createDefaultVRExperience({
+      createDeviceOrientationCamera: false
+    });
+    vrHelper.enableTeleportation({ floorMeshes: [environment.ground] });
+    */
 
     // Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
     this.camera = new BABYLON.ArcRotateCamera(
