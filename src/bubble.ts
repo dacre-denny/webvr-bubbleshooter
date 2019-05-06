@@ -1,3 +1,5 @@
+import * as BABYLON from "babylonjs";
+
 export const enum Colors {
   RED,
   BLUE,
@@ -6,5 +8,19 @@ export const enum Colors {
 }
 
 export class Bubble {
-  constructor(mesh: BABYLON.InstancedMesh, color: Colors) {}
+  mesh: BABYLON.InstancedMesh;
+
+  constructor(mesh: BABYLON.InstancedMesh, color: Colors) {
+    this.mesh = mesh;
+  }
+
+  public getImposter() {
+    return this.mesh.physicsImpostor;
+  }
+
+  public getMesh() {
+    return this.mesh;
+  }
+
+  public destroy() {}
 }

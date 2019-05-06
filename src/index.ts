@@ -1,11 +1,7 @@
 import * as BABYLON from "babylonjs";
-
-const enum Colors {
-  RED,
-  BLUE,
-  GREEN,
-  YELLOW
-}
+import { BubbleFactory } from "./bubbleFactory";
+import { Bubble } from "./bubble";
+import { Level } from "./level";
 
 const GAME_WIDTH = 5;
 const GAME_DEPTH = 5;
@@ -23,32 +19,28 @@ class Game {
   private boundary: BABYLON.Mesh;
 
   private launcher: BABYLON.Mesh;
-  private gameBoard: BABYLON.InstancedMesh[] = [];
-
-  private bubbles: Map<Colors, BABYLON.Mesh>;
+  /*
+  private bubbles: Bubble[] = [];
+*/
+  private level: Level;
+  private bubbleFactory: BubbleFactory;
 
   constructor(canvasElement: string) {
     this.canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
-    this.engine = new BABYLON.Engine(this.canvas, true);
-    this.bubbles = new Map();
+    this.engine = new BABYLON.Engine(this.canvas, false);
+
+    this.scene = new BABYLON.Scene(this.engine);
+    this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
+
+    this.bubbleFactory = new BubbleFactory(this.scene);
+    this.level = new Level(this.scene, this.bubbleFactory);
   }
 
-  private getBubble(id: number) {
-    const bubbleColor = Math.floor(Math.random() * 4) as Colors;
-    const bubbleMesh = this.bubbles.get(bubbleColor);
+  //   private initGameBoard() {
+  //     const gameBoard = new Array<Bubble>(GAME_DEPTH * GAME_HEIGHT * GAME_WIDTH);
 
-    const instance = bubbleMesh.createInstance(`bubble${id}`);
-
-    return instance;
-  }
-
-  private initGameBoard() {
-    const gameBoard = new Array<BABYLON.InstancedMesh>(
-      GAME_DEPTH * GAME_HEIGHT * GAME_WIDTH
-    );
-
-    this.gameBoard = gameBoard;
-  }
+  //     this.bubbles = gameBoard;
+  //   }
 
   private getBubbleIndex(w: number, d: number, h: number) {
     const hOffset = h * GAME_WIDTH * GAME_DEPTH;
@@ -57,87 +49,8 @@ class Game {
     return hOffset + dOffset + w;
   }
 
-  private gameBoardStep() {
-    // Iterate all bubbles in game board
-    for (let k = GAME_HEIGHT - 1 - 1; k >= 0; k--) {
-      for (let i = 0; i < GAME_WIDTH; i++) {
-        for (let j = 0; j < GAME_DEPTH; j++) {
-          const idxSrc = this.getBubbleIndex(i, j, k);
-          const idxDst = this.getBubbleIndex(i, j, k + 1);
-
-          const meshSrc = this.gameBoard[idxSrc];
-
-          if (meshSrc) {
-            meshSrc.position.y = meshSrc.position.y - 1;
-          }
-
-          this.gameBoard[idxDst] = meshSrc;
-        }
-      }
-    }
-
-    // Populate next leve of bubbles
-    for (let i = 0; i < GAME_WIDTH; i++) {
-      for (let j = 0; j < GAME_DEPTH; j++) {
-        const x = i - GAME_WIDTH / 2;
-        const z = j - GAME_DEPTH / 2;
-
-        const bubble = this.getBubble(this.n++);
-        bubble.position.y = GAME_HEIGHT;
-        bubble.position.x = x + 0.5;
-        bubble.position.z = z + 0.5;
-
-        const imposter = new BABYLON.PhysicsImpostor(
-          bubble,
-          BABYLON.PhysicsImpostor.SphereImpostor,
-          { mass: 0, friction: 0.0, restitution: 0, damping: 0 },
-          this.scene
-        );
-
-        bubble.physicsImpostor = imposter;
-
-        this.gameBoard[this.getBubbleIndex(i, j, 0)] = bubble;
-      }
-    }
-  }
-
-  private initBubbleTypes() {
-    this.bubbles.clear();
-
-    const mapping = new Map<Colors, BABYLON.Color3>();
-    mapping.set(Colors.RED, BABYLON.Color3.Red());
-    mapping.set(Colors.BLUE, BABYLON.Color3.Blue());
-    mapping.set(Colors.GREEN, BABYLON.Color3.Green());
-    mapping.set(Colors.YELLOW, BABYLON.Color3.Yellow());
-
-    for (const [key, color] of mapping.entries()) {
-      const material = new BABYLON.StandardMaterial(
-        `material${key}`,
-        this.scene
-      );
-
-      material.diffuseColor = color;
-
-      let mesh = BABYLON.MeshBuilder.CreateIcoSphere(
-        `mesh${key}`,
-        { radius: 0.25, subdivisions: 1 },
-        this.scene
-      );
-
-      mesh.isVisible = false;
-      mesh.material = material;
-
-      this.bubbles.set(key, mesh);
-    }
-    /** BABYLON.MeshBuilder.CreateIcoSphere(
-      `Box${this.n++}`,
-      { radius: 0.5, subdivisions: 1 },
-      this.scene
-    ); */
-  }
-
   shoot() {
-    const bullet = this.getBubble(this.n++);
+    const bubble = this.bubbleFactory.createBubble();
 
     // var bullet = BABYLON.MeshBuilder.CreateIcoSphere(
     //   `Box${this.n++}`,
@@ -145,27 +58,19 @@ class Game {
     //   this.scene
     // );
 
-    const imposter = new BABYLON.PhysicsImpostor(
-      bullet,
-      BABYLON.PhysicsImpostor.SphereImpostor,
-      { mass: 1, friction: 0.0, restitution: 1, damping: 0 },
-      this.scene
-    );
-
     var forceDirection = this.launcher.getDirection(
       new BABYLON.Vector3(0, 1, 0)
     );
     //var forceDirection = new BABYLON.Vector3(1, 1, 1);
 
+    const imposter = bubble.getImposter();
     imposter.applyForce(forceDirection.scale(550), BABYLON.Vector3.Zero());
 
-    bullet.physicsImpostor = imposter;
-    bullet.checkCollisions = true;
-
-    const tgts = this.gameBoard
+    /*
+    const tgts = this.bubbles
       .filter(b => !!b)
       .map(bubble => {
-        return bubble.physicsImpostor;
+        return bubble.getImposter();
       });
 
     const handler = (
@@ -179,11 +84,12 @@ class Game {
         other.object as BABYLON.Mesh
       );
 
-      const { physicsImpostor } = bullet;
+      const physicsImpostor = bubble.getImposter();
       physicsImpostor.unregisterOnPhysicsCollide(tgts, handler);
     };
 
-    bullet.physicsImpostor.registerOnPhysicsCollide(tgts, handler);
+    bubble.getImposter().registerOnPhysicsCollide(tgts, handler);
+    */
   }
 
   onBubbleCollide(bullet: BABYLON.Mesh, other: BABYLON.Mesh) {
@@ -250,99 +156,12 @@ class Game {
     this.launcher = launcher;
   }
 
-  createExtents() {
-    // new BABYLON.PhysicsImpostor(null, BABYLON.PhysicsImpostor.MeshImpostor, )
-
-    const material = new BABYLON.StandardMaterial(
-      "materialGameboard",
-      this.scene
-    );
-
-    material.diffuseColor = BABYLON.Color3.White();
-    material.alpha = 0.5;
-    // // Add and manipulate meshes in the scene
-
-    var left = BABYLON.MeshBuilder.CreateBox(
-      "left",
-      {
-        height: GAME_HEIGHT,
-        width: 0.1,
-        depth: GAME_DEPTH
-      },
-      this.scene
-    );
-    left.position.x = -0.5 * GAME_WIDTH;
-    left.visibility = 0.5;
-    var front = BABYLON.MeshBuilder.CreateBox(
-      "front",
-      {
-        height: GAME_HEIGHT,
-        width: GAME_DEPTH,
-        depth: 0.1
-      },
-      this.scene
-    );
-
-    front.position.z = -0.5 * GAME_DEPTH;
-    front.visibility = 0.5;
-    var back = BABYLON.MeshBuilder.CreateBox(
-      "back",
-      {
-        height: GAME_HEIGHT,
-        width: GAME_DEPTH,
-        depth: 0.1
-      },
-      this.scene
-    );
-
-    back.position.z = 0.5 * GAME_DEPTH;
-    back.visibility = 0.5;
-
-    var right = BABYLON.MeshBuilder.CreateBox(
-      "right",
-      {
-        height: GAME_HEIGHT,
-        width: 0.1,
-        depth: GAME_DEPTH
-      },
-      this.scene
-    );
-    right.position.x = 0.5 * GAME_WIDTH;
-    right.visibility = 0.5;
-
-    const sides = [front, left, back, right];
-
-    const bounds = new BABYLON.Mesh("bound", this.scene);
-
-    for (const side of sides) {
-      side.position.y += GAME_HEIGHT * 0.5;
-      bounds.addChild(side);
-    }
-
-    for (const side of sides) {
-      side.physicsImpostor = new BABYLON.PhysicsImpostor(
-        side,
-        BABYLON.PhysicsImpostor.BoxImpostor,
-        { mass: 0, damping: 0, friction: 0, restitution: 0 },
-        this.scene
-      );
-      side.checkCollisions = true;
-    }
-
-    bounds.physicsImpostor = new BABYLON.PhysicsImpostor(
-      bounds,
-      BABYLON.PhysicsImpostor.NoImpostor,
-      { mass: 0, damping: 0, friction: 0, restitution: 1 },
-      this.scene
-    );
-    bounds.checkCollisions = true;
-
-    this.boundary = bounds;
-  }
-
   createScene(): void {
-    this.scene = new BABYLON.Scene(this.engine);
-    this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
+    this.level.insertNextLayer();
+    this.level.insertNextLayer();
+    this.level.insertNextLayer();
+    this.level.insertNextLayer();
+    this.level.insertNextLayer();
 
     this.scene.executeWhenReady(() => {});
 
@@ -360,15 +179,16 @@ class Game {
     physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
 
     //
-    this.initBubbleTypes();
-    this.initGameBoard();
-    this.createExtents();
+    //this.initGameBoard();
+    //this.createExtents();
     this.createLauncher();
 
+    /*
     this.gameBoardStep();
     setInterval(() => {
       this.gameBoardStep();
     }, 1000);
+    */
     // var environment = this.scene.createDefaultEnvironment({
     //   enableGroundShadow: true,
     //   groundYBias: 1
