@@ -51,19 +51,26 @@ class Game {
 
   shoot() {
     const bubble = this.bubbleFactory.createBubble();
+    const imposter = bubble.getImposter();
 
-    // var bullet = BABYLON.MeshBuilder.CreateIcoSphere(
-    //   `Box${this.n++}`,
-    //   { radius: 0.5, subdivisions: 1 },
-    //   this.scene
-    // );
+    const imposters = this.level.getBubbleImposters();
+
+    const handler = (
+      collider: BABYLON.PhysicsImpostor,
+      other: BABYLON.PhysicsImpostor
+    ) => {
+        const object = (other.object as any)
+        if(object.bubble) {
+            
+        }
+    };
+
+    imposter.registerOnPhysicsCollide(imposters, handler);
 
     var forceDirection = this.launcher.getDirection(
       new BABYLON.Vector3(0, 1, 0)
     );
-    //var forceDirection = new BABYLON.Vector3(1, 1, 1);
 
-    const imposter = bubble.getImposter();
     imposter.applyForce(forceDirection.scale(550), BABYLON.Vector3.Zero());
 
     /*
@@ -73,10 +80,6 @@ class Game {
         return bubble.getImposter();
       });
 
-    const handler = (
-      collider: BABYLON.PhysicsImpostor,
-      other: BABYLON.PhysicsImpostor
-    ) => {
       console.log("x");
 
       this.onBubbleCollide(
@@ -118,17 +121,9 @@ class Game {
     physicsImpostor.setLinearVelocity(BABYLON.Vector3.Zero());
 
     bullet.position.copyFrom(other.position.add(vec));
-
-    // if(bullet.material.id === other.material.id) {
-
-    // }
-    // else {
-
-    // }
   }
 
   createLauncher() {
-    //Create ribbon with updatable parameter set to true for later changes
     var launcherTube = BABYLON.MeshBuilder.CreateCylinder(
       "launcherTube",
       {
@@ -178,22 +173,7 @@ class Game {
     const physicsEngine = this.scene.getPhysicsEngine();
     physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
 
-    //
-    //this.initGameBoard();
-    //this.createExtents();
     this.createLauncher();
-
-    /*
-    this.gameBoardStep();
-    setInterval(() => {
-      this.gameBoardStep();
-    }, 1000);
-    */
-    // var environment = this.scene.createDefaultEnvironment({
-    //   enableGroundShadow: true,
-    //   groundYBias: 1
-    // });
-    // environment.setMainColor(BABYLON.Color3.FromHexString("#74b9ff"));
 
     /*
     const vrHelper = this.scene.createDefaultVRExperience({

@@ -11,6 +11,14 @@ export class Bubble {
   mesh: BABYLON.InstancedMesh;
 
   constructor(mesh: BABYLON.InstancedMesh, color: Colors) {
+    mesh.physicsImpostor = new BABYLON.PhysicsImpostor(
+      mesh,
+      BABYLON.PhysicsImpostor.SphereImpostor,
+      { mass: 1, friction: 0.0, restitution: 1, damping: 0 },
+      mesh.getScene()
+    );
+
+    mesh.checkCollisions = true;
     this.mesh = mesh;
   }
 

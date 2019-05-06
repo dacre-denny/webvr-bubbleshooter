@@ -47,16 +47,6 @@ export class BubbleFactory {
     const mesh = this.bubbles.get(color);
 
     const instance = mesh.createInstance(`bubble.mesh.instance.${this.count}`);
-    const imposter = new BABYLON.PhysicsImpostor(
-      instance,
-      BABYLON.PhysicsImpostor.SphereImpostor,
-      { mass: 1, friction: 0.0, restitution: 1, damping: 0 },
-      instance.getScene()
-    );
-
-    instance.physicsImpostor = imposter;
-    instance.checkCollisions = true;
-
     this.count++;
 
     return new Bubble(instance, color);

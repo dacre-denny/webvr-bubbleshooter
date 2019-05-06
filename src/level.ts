@@ -5,6 +5,7 @@ import { BubbleFactory } from "./bubbleFactory";
 const LEVEL_WIDTH = 5;
 const LEVEL_DEPTH = 5;
 const LEVEL_LAYERS = 10;
+const WALL_THICKNESS = 0.1;
 
 enum LayerType {
   Inner,
@@ -29,87 +30,98 @@ export class Level {
 
   public create(scene: BABYLON.Scene) {
     const material = new BABYLON.StandardMaterial("level.material", scene);
-
     material.diffuseColor = BABYLON.Color3.White();
-    material.alpha = 0.5;
 
-    var left = BABYLON.MeshBuilder.CreateBox(
-      "left",
-      {
-        height: LEVEL_LAYERS,
-        width: 0.1,
-        depth: LEVEL_DEPTH
-      },
-      scene
-    );
-    left.position.set(-0.5 * LEVEL_WIDTH, 0, 0.05);
-    left.visibility = 0.5;
-
-    var front = BABYLON.MeshBuilder.CreateBox(
-      "front",
-      {
-        height: LEVEL_LAYERS,
-        width: LEVEL_DEPTH,
-        depth: 0.1
-      },
-      scene
-    );
-
-    front.position.set(-0.05, 0, -0.5 * LEVEL_DEPTH);
-    front.visibility = 0.5;
-    var back = BABYLON.MeshBuilder.CreateBox(
-      "back",
-      {
-        height: LEVEL_LAYERS,
-        width: LEVEL_DEPTH,
-        depth: 0.1
-      },
-      scene
-    );
-
-    back.position.set(0.05, 0, 0.5 * LEVEL_DEPTH);
-    back.visibility = 0.5;
-
-    var right = BABYLON.MeshBuilder.CreateBox(
-      "right",
-      {
-        height: LEVEL_LAYERS,
-        width: 0.1,
-        depth: LEVEL_DEPTH
-      },
-      scene
-    );
-    right.position.set(0.5 * LEVEL_WIDTH, 0, -0.05);
-    right.visibility = 0.5;
-
-    const sides = [front, left, back, right];
-
-    const bounds = new BABYLON.Mesh("bound", scene);
-
-    for (const side of sides) {
-      side.position.y += LEVEL_LAYERS * 0.5;
-      bounds.addChild(side);
+    interface Wall {
+      height: number;
+      width: number;
+      depth: number;
+      position: BABYLON.Vector3;
     }
 
-    for (const side of sides) {
-      side.physicsImpostor = new BABYLON.PhysicsImpostor(
-        side,
+    const walls: Wall[] = [
+      {
+        height: LEVEL_LAYERS,
+        width: WALL_THICKNESS,
+        depth: LEVEL_DEPTH,
+        position: new BABYLON.Vector3(
+          -0.5 * LEVEL_WIDTH,
+          0,
+          0.5 * WALL_THICKNESS
+        )
+      },
+      {
+        height: LEVEL_LAYERS,
+        width: LEVEL_DEPTH,
+        depth: WALL_THICKNESS,
+        position: new BABYLON.Vector3(
+          -0.5 * WALL_THICKNESS,
+          0,
+          -0.5 * LEVEL_DEPTH
+        )
+      },
+      {
+        height: LEVEL_LAYERS,
+        width: LEVEL_WIDTH,
+        depth: WALL_THICKNESS,
+        position: new BABYLON.Vector3(
+          0.5 * WALL_THICKNESS,
+          0,
+          0.5 * LEVEL_DEPTH
+        )
+      },
+      {
+        height: LEVEL_LAYERS,
+        width: WALL_THICKNESS,
+        depth: LEVEL_DEPTH,
+        position: new BABYLON.Vector3(
+          0.5 * LEVEL_WIDTH,
+          0,
+          -0.5 * WALL_THICKNESS
+        )
+      }
+    ];
+
+    const level = new BABYLON.Mesh("level", scene);
+
+    for (const wall of walls) {
+      var mesh = BABYLON.MeshBuilder.CreateBox("level.left", wall, scene);
+      mesh.position.set(wall.position.x, LEVEL_LAYERS * 0.5, wall.position.z);
+      mesh.visibility = 0.5;
+
+      const imposter = new BABYLON.PhysicsImpostor(
+        mesh,
         BABYLON.PhysicsImpostor.BoxImpostor,
         { mass: 0, damping: 0, friction: 0, restitution: 0 },
         scene
       );
-      side.checkCollisions = true;
+
+      mesh.physicsImpostor = imposter;
+      mesh.checkCollisions = true;
+
+      level.addChild(mesh);
     }
 
-    bounds.physicsImpostor = new BABYLON.PhysicsImpostor(
-      bounds,
+    const impostor = new BABYLON.PhysicsImpostor(
+      level,
       BABYLON.PhysicsImpostor.NoImpostor,
       { mass: 0, damping: 0, friction: 0, restitution: 1 },
       scene
     );
-    bounds.checkCollisions = true;
+    level.physicsImpostor = impostor;
+    level.checkCollisions = true;
+  }
 
-    //boundary = bounds;
+  public getBubbleImposters() {
+    const imposters: BABYLON.PhysicsImpostor[] = [];
+
+    for (const layer of this.layers) {
+      for (const bubble of layer.bubbles) {
+        imposters.push(bubble.getImposter());
+      }
+    }
+
+    return imposters;
   }
 
   public step() {
