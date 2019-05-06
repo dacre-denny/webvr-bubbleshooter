@@ -50,6 +50,8 @@ class Game {
   }
 
   shoot() {
+    this.launcher.lookAt(new BABYLON.Vector3(0, 2, 0.25));
+
     const bubble = this.bubbleFactory.createBubble();
     const imposter = bubble.getImposter();
 
@@ -59,10 +61,17 @@ class Game {
       collider: BABYLON.PhysicsImpostor,
       other: BABYLON.PhysicsImpostor
     ) => {
-        const object = (other.object as any)
-        if(object.bubble) {
-            
-        }
+      const colliderBubble = (collider.object as any).bubble as Bubble;
+      //    const otherBubble = (other.object as any).bubble as Bubble;
+
+      this.level.onBubbleCollide(colliderBubble);
+      /*
+      if (colliderBubble) {
+        //bubble.destroy();
+        this.scene.removeMesh(colliderBubble.getMesh());
+        this.scene.removeMesh(otherBubble.getMesh());
+      }
+      */
     };
 
     imposter.registerOnPhysicsCollide(imposters, handler);
@@ -152,11 +161,12 @@ class Game {
   }
 
   createScene(): void {
-    this.level.insertNextLayer();
-    this.level.insertNextLayer();
-    this.level.insertNextLayer();
-    this.level.insertNextLayer();
-    this.level.insertNextLayer();
+    setInterval(() => {
+      if (this.level.anyBubblesBeyondBaseline()) {
+      } else {
+        this.level.insertNextLayer();
+      }
+    }, 1000);
 
     this.scene.executeWhenReady(() => {});
 
@@ -228,7 +238,7 @@ class Game {
         this.debug.position.copyFrom(dir);
         this.debug.position.y = 0;
 
-        this.launcher.lookAt(dir);
+        // this.launcher.lookAt(dir);
       }
     });
   }

@@ -9,6 +9,7 @@ export const enum Colors {
 
 export class Bubble {
   mesh: BABYLON.InstancedMesh;
+  color: Colors;
 
   constructor(mesh: BABYLON.InstancedMesh, color: Colors) {
     mesh.physicsImpostor = new BABYLON.PhysicsImpostor(
@@ -19,7 +20,14 @@ export class Bubble {
     );
 
     mesh.checkCollisions = true;
+    (mesh as any).bubble = this;
+
     this.mesh = mesh;
+    this.color = color;
+  }
+
+  public getColor() {
+    return this.color;
   }
 
   public getImposter() {
@@ -30,5 +38,10 @@ export class Bubble {
     return this.mesh;
   }
 
-  public destroy() {}
+  public destroy() {
+    this.mesh.dispose(false, true);
+    this.mesh.physicsImpostor.dispose();
+
+    this.mesh = null;
+  }
 }

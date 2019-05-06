@@ -1,6 +1,7 @@
 import * as BABYLON from "babylonjs";
 import { Bubble } from "./bubble";
 import { BubbleFactory } from "./bubbleFactory";
+import { Layer } from "babylonjs";
 
 const LEVEL_WIDTH = 5;
 const LEVEL_DEPTH = 5;
@@ -12,17 +13,19 @@ enum LayerType {
   Outer
 }
 
-interface Layer {
-  bubbles: Bubble[];
-  type: LayerType;
-}
+// interface Layer {
+//   bubbles: Bubble[];
+//   type: LayerType;
+// }
 
 export class Level {
-  private layers: Layer[];
+  private bubbles: Bubble[];
   private bubbleFactory: BubbleFactory;
+  private type: LayerType;
 
   constructor(scene: BABYLON.Scene, bubbleFactory: BubbleFactory) {
-    this.layers = [];
+    this.type = LayerType.Inner;
+    this.bubbles = [];
     this.bubbleFactory = bubbleFactory;
 
     this.create(scene);
@@ -115,78 +118,64 @@ export class Level {
   public getBubbleImposters() {
     const imposters: BABYLON.PhysicsImpostor[] = [];
 
-    for (const layer of this.layers) {
-      for (const bubble of layer.bubbles) {
-        imposters.push(bubble.getImposter());
-      }
+    for (const bubble of this.bubbles) {
+      imposters.push(bubble.getImposter());
     }
 
     return imposters;
   }
 
-  public step() {
-    /**
-     * // Iterate all bubbles in game board
-    for (let k = LEVEL_HEIGHT - 1 - 1; k >= 0; k--) {
-      for (let i = 0; i < LEVEL_WIDTH; i++) {
-        for (let j = 0; j < LEVEL_DEPTH; j++) {
-          const idxSrc = this.getBubbleIndex(i, j, k);
-          const idxDst = this.getBubbleIndex(i, j, k + 1);
+  public getLocalBubblesWithSameColor(bubble: Bubble) {
+    // const bubbleLayerIdx = this.layers.findIndex(layer =>
+    //   layer.bubbles.includes(bubble)
+    // );
+    // if (bubbleLayerIdx < 0) {
+    //   return;
+    // }
+  }
 
-          const bubble = this.bubbles[idxSrc];
+  public onBubbleCollide(bubble: Bubble) {
+    const position = bubble.getMesh().position;
+    const [x, y, z] = position.asArray().map(Math.floor);
 
-          if (bubble) {
-            const mesh = bubble.getMesh();
-            mesh.position.y = mesh.position.y - 1;
-          }
+    // Assumes vertical step amount is 1.0
+    const type = y % 2 === 0 ? LayerType.Inner : LayerType.Outer;
 
-          this.bubbles[idxDst] = bubble;
-        }
-      }
+    const imposter = bubble.getImposter();
+    const mesh = bubble.getMesh();
+
+    imposter.setMass(0);
+
+    if (type === LayerType.Inner) {
+      mesh.position.set(x + 0.5, y, z + 0.5);
+    } else {
+      mesh.position.set(x, y, z);
     }
 
-    // Populate next leve of bubbles
-    for (let i = 0; i < LEVEL_WIDTH; i++) {
-      for (let j = 0; j < LEVEL_DEPTH; j++) {
-        const x = i - LEVEL_WIDTH / 2;
-        const z = j - LEVEL_DEPTH / 2;
-
-        const bubble = this.bubbleFactory.createBubble();
-        const mesh = bubble.getMesh();
-        mesh.position.y = LEVEL_HEIGHT;
-        mesh.position.x = x + 0.5;
-        mesh.position.z = z + 0.5;
-
-        this.bubbles[this.getBubbleIndex(i, j, 0)] = bubble;
-      }
-    }
-     */
+    this.bubbles.push(bubble);
   }
 
   private shiftLayers() {
-    for (const layer of this.layers) {
-      for (const bubble of layer.bubbles) {
-        const mesh = bubble.getMesh();
-        mesh.position.addInPlace(BABYLON.Vector3.Down());
-      }
+    for (const bubble of this.bubbles) {
+      const mesh = bubble.getMesh();
+      mesh.position.addInPlace(BABYLON.Vector3.Down());
     }
+  }
+
+  public anyBubblesBeyondBaseline() {
+    return this.bubbles.some(bubble => {
+      return bubble.getMesh().position.y < 0;
+    });
   }
 
   public insertNextLayer() {
     this.shiftLayers();
 
-    const type =
-      this.layers.length > 0 && this.layers[0].type === LayerType.Inner
-        ? LayerType.Outer
-        : LayerType.Inner;
+    const nWidth = LEVEL_WIDTH - (this.type === LayerType.Inner ? 1 : 0);
+    const nDepth = LEVEL_DEPTH - (this.type === LayerType.Inner ? 1 : 0);
 
-    const bubbles: Bubble[] = [];
-
-    const nWidth = LEVEL_WIDTH - (type === LayerType.Inner ? 1 : 0);
-    const nDepth = LEVEL_DEPTH - (type === LayerType.Inner ? 1 : 0);
-
-    const xOffset = type === LayerType.Inner ? 1 : 0.5;
-    const zOffset = type === LayerType.Inner ? 1 : 0.5;
+    const xOffset = this.type === LayerType.Inner ? 1 : 0.5;
+    const zOffset = this.type === LayerType.Inner ? 1 : 0.5;
 
     for (let w = 0; w < nWidth; w++) {
       for (let d = 0; d < nDepth; d++) {
@@ -201,15 +190,16 @@ export class Level {
 
         mesh.position.set(x, LEVEL_LAYERS, z);
 
-        bubbles.push(bubble);
+        this.bubbles.push(bubble);
       }
     }
 
-    const layer: Layer = {
-      type,
-      bubbles
-    };
+    // const layer: Layer = {
+    //   type,
+    //   bubbles
+    // };
 
-    this.layers.unshift(layer);
+    this.type =
+      this.type === LayerType.Inner ? LayerType.Outer : LayerType.Inner;
   }
 }
