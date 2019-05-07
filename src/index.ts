@@ -12,11 +12,8 @@ class Game {
   private engine: BABYLON.Engine;
   private scene: BABYLON.Scene;
   private camera: BABYLON.ArcRotateCamera;
-  private light: BABYLON.Light;
-  private n: number = 0;
 
   private debug: BABYLON.Mesh;
-  private boundary: BABYLON.Mesh;
 
   private launcher: BABYLON.Mesh;
   /*
@@ -42,15 +39,8 @@ class Game {
   //     this.bubbles = gameBoard;
   //   }
 
-  private getBubbleIndex(w: number, d: number, h: number) {
-    const hOffset = h * GAME_WIDTH * GAME_DEPTH;
-    const dOffset = d * GAME_WIDTH;
-
-    return hOffset + dOffset + w;
-  }
-
   shoot() {
-    this.launcher.lookAt(new BABYLON.Vector3(0, 2, 0.25));
+    //   this.launcher.lookAt(new BABYLON.Vector3(0, 2, 0.25));
 
     const bubble = this.bubbleFactory.createBubble();
     const imposter = bubble.getImposter();
@@ -62,7 +52,7 @@ class Game {
       other: BABYLON.PhysicsImpostor
     ) => {
       const colliderBubble = (collider.object as any).bubble as Bubble;
-      //    const otherBubble = (other.object as any).bubble as Bubble;
+      const otherBubble = (other.object as any).bubble as Bubble;
 
       this.level.onBubbleCollide(colliderBubble);
       /*
@@ -161,12 +151,16 @@ class Game {
   }
 
   createScene(): void {
+    /*
     setInterval(() => {
       if (this.level.anyBubblesBeyondBaseline()) {
       } else {
         this.level.insertNextLayer();
       }
     }, 1000);
+*/
+    this.level.insertNextLayer();
+    this.level.insertNextLayer();
 
     this.scene.executeWhenReady(() => {});
 
@@ -225,7 +219,9 @@ class Game {
     });
 
     window.addEventListener("click", () => {
-      this.shoot();
+      if (!this.level.anyBubblesBeyondBaseline()) {
+        this.shoot();
+      }
     });
 
     window.addEventListener("mousemove", (event: MouseEvent) => {
