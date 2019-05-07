@@ -45,23 +45,20 @@ class Game {
     const bubble = this.bubbleFactory.createBubble();
     const imposter = bubble.getImposter();
 
-    const imposters = this.level.getBubbleImposters();
+    const imposters = Array.from(this.level.getBubbleImposters());
+
+    console.log(`imposters: ${imposters.length}`);
 
     const handler = (
       collider: BABYLON.PhysicsImpostor,
       other: BABYLON.PhysicsImpostor
     ) => {
+      imposter.unregisterOnPhysicsCollide(imposters, handler);
+
       const colliderBubble = (collider.object as any).bubble as Bubble;
       const otherBubble = (other.object as any).bubble as Bubble;
 
-      this.level.onBubbleCollide(colliderBubble);
-      /*
-      if (colliderBubble) {
-        //bubble.destroy();
-        this.scene.removeMesh(colliderBubble.getMesh());
-        this.scene.removeMesh(otherBubble.getMesh());
-      }
-      */
+      this.level.onBubbleCollide(colliderBubble, otherBubble);
     };
 
     imposter.registerOnPhysicsCollide(imposters, handler);
@@ -71,55 +68,6 @@ class Game {
     );
 
     imposter.applyForce(forceDirection.scale(550), BABYLON.Vector3.Zero());
-
-    /*
-    const tgts = this.bubbles
-      .filter(b => !!b)
-      .map(bubble => {
-        return bubble.getImposter();
-      });
-
-      console.log("x");
-
-      this.onBubbleCollide(
-        collider.object as BABYLON.Mesh,
-        other.object as BABYLON.Mesh
-      );
-
-      const physicsImpostor = bubble.getImposter();
-      physicsImpostor.unregisterOnPhysicsCollide(tgts, handler);
-    };
-
-    bubble.getImposter().registerOnPhysicsCollide(tgts, handler);
-    */
-  }
-
-  onBubbleCollide(bullet: BABYLON.Mesh, other: BABYLON.Mesh) {
-    const diff = other.position.subtract(bullet.position);
-
-    const m = {
-      L: BABYLON.Vector3.Left(),
-      R: BABYLON.Vector3.Right(),
-      U: BABYLON.Vector3.Up(),
-      D: BABYLON.Vector3.Down(),
-      B: BABYLON.Vector3.Backward(),
-      F: BABYLON.Vector3.Forward()
-    };
-
-    const [max] = Object.entries(m).sort((e0, e1) =>
-      BABYLON.Vector3.Dot(e0[1], diff) > BABYLON.Vector3.Dot(e1[1], diff)
-        ? 1
-        : -1
-    );
-    const key = max[0];
-
-    const vec = (m as any)[key] as BABYLON.Vector3;
-
-    const { physicsImpostor } = bullet;
-    physicsImpostor.setMass(0);
-    physicsImpostor.setLinearVelocity(BABYLON.Vector3.Zero());
-
-    bullet.position.copyFrom(other.position.add(vec));
   }
 
   createLauncher() {
@@ -160,7 +108,7 @@ class Game {
     }, 1000);
 */
     this.level.insertNextLayer();
-    this.level.insertNextLayer();
+    // this.level.insertNextLayer();
 
     this.scene.executeWhenReady(() => {});
 
@@ -190,7 +138,7 @@ class Game {
     this.camera = new BABYLON.ArcRotateCamera(
       "camera",
       -Math.PI / 2,
-      Math.PI / 4,
+      Math.PI / 2,
       20,
       new BABYLON.Vector3(0, 3, 0),
       this.scene
@@ -218,9 +166,13 @@ class Game {
       this.engine.resize();
     });
 
-    window.addEventListener("click", () => {
-      if (!this.level.anyBubblesBeyondBaseline()) {
-        this.shoot();
+    window.addEventListener("keyup", e => {
+      if (e.keyCode === 32) {
+        this.level.insertNextLayer();
+      } else {
+        if (!this.level.anyBubblesBeyondBaseline()) {
+          this.shoot();
+        }
       }
     });
 

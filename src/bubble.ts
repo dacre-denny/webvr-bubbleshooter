@@ -39,8 +39,8 @@ export class Bubble {
   }
 
   public destroy() {
-    this.mesh.dispose(false, true);
     this.mesh.physicsImpostor.dispose();
+    this.mesh.dispose();
 
     this.mesh = null;
   }

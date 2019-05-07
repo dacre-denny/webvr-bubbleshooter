@@ -7,39 +7,13 @@ const LEVEL_DEPTH = 8;
 const LEVEL_LAYERS = 10;
 const WALL_THICKNESS = 0.1;
 
-enum LayerType {
-  Inner,
-  Outer
-}
-
-class Layer {
-  public bubbles: Bubble[];
-  public type: LayerType;
-  public level: number;
-
-  constructor(level: number) {
-    this.bubbles = [];
-    this.level = level;
-  }
-
-  public stepDown() {
-    this.level--;
-
-    for (const bubble of this.bubbles) {
-      const mesh = bubble.getMesh();
-      mesh.position.y = this.level;
-    }
-  }
-}
-
 export class Level {
-  //private bubbles: Bubble[];
   private bubbleFactory: BubbleFactory;
 
-  private lattice: Layer[];
+  private lattice: Map<string, Bubble>;
 
   constructor(scene: BABYLON.Scene, bubbleFactory: BubbleFactory) {
-    this.lattice = [];
+    this.lattice = new Map();
     this.bubbleFactory = bubbleFactory;
 
     this.create(scene);
@@ -130,8 +104,8 @@ export class Level {
   }
 
   public *getBubbles() {
-    for (const layer of this.lattice) {
-      for (const bubble of layer.bubbles) {
+    for (const bubble of this.lattice.values()) {
+      if (bubble) {
         yield bubble;
       }
     }
@@ -156,41 +130,67 @@ export class Level {
     // }
   }
 
-  public onBubbleCollide(bubble: Bubble) {
-    /*
-    const intPosition = new BABYLON.Vector3(
-      position.x - Math.floor(position.x) > 0.5
-      ? Math.ceil(position.x)
-      : Math.floor(position.x),
-      position.y - Math.floor(position.y) > 0.5
-      ? Math.ceil(position.y)
-        : Math.floor(position.y),
-        position.z - Math.floor(position.z) > 0.5
-        ? Math.ceil(position.z)
-        : Math.floor(position.z)
-        );
-        */
-    const imposter = bubble.getImposter();
-    const mesh = bubble.getMesh();
-    const position = mesh.position;
+  private clamp(coord: BABYLON.Vector3) {
+    const max = new BABYLON.Vector3(
+      LEVEL_WIDTH - 1,
+      LEVEL_LAYERS - 1,
+      LEVEL_DEPTH - 1
+    );
+    const min = new BABYLON.Vector3();
 
-    imposter.setMass(0);
-    /*
-    if (type === LayerType.Inner) {
-      mesh.position.set(
-        intPosition.x + 0.5,
-        intPosition.y,
-        intPosition.z + 0.5
-      );
-    } else {
-      mesh.position.set(intPosition.x, intPosition.y, intPosition.z);
+    return BABYLON.Vector3.Clamp(coord, min, max);
+  }
+
+  public onBubbleCollide(bubble: Bubble, other: Bubble) {
+    const coords = this.getCoords(other);
+    if (!coords) {
+      return;
     }
-    */
+    other.getMesh().scaling.setAll(0.75);
+
+    const imposter = bubble.getImposter();
+    imposter.setMass(0);
+
+    if (!this.hasBubble(coords)) {
+      this.setBubble(coords, bubble);
+      return;
+    } else if (!this.hasBubble(coords.subtract(BABYLON.Vector3.Left()))) {
+      this.setBubble(coords.subtract(BABYLON.Vector3.Left()), bubble);
+      return;
+    } else if (!this.hasBubble(coords.subtract(BABYLON.Vector3.Right()))) {
+      this.setBubble(coords.subtract(BABYLON.Vector3.Right()), bubble);
+      return;
+    } else if (!this.hasBubble(coords.subtract(BABYLON.Vector3.Forward()))) {
+      this.setBubble(coords.subtract(BABYLON.Vector3.Forward()), bubble);
+      return;
+    } else if (!this.hasBubble(coords.subtract(BABYLON.Vector3.Backward()))) {
+      this.setBubble(coords.subtract(BABYLON.Vector3.Backward()), bubble);
+      return;
+    }
+
+    const below = coords.add(BABYLON.Vector3.Down());
+
+    if (!this.hasBubble(below)) {
+      this.setBubble(below, bubble);
+      return;
+    } else if (!this.hasBubble(below.subtract(BABYLON.Vector3.Left()))) {
+      this.setBubble(below.subtract(BABYLON.Vector3.Left()), bubble);
+      return;
+    } else if (!this.hasBubble(below.subtract(BABYLON.Vector3.Right()))) {
+      this.setBubble(below.subtract(BABYLON.Vector3.Right()), bubble);
+      return;
+    } else if (!this.hasBubble(below.subtract(BABYLON.Vector3.Forward()))) {
+      this.setBubble(below.subtract(BABYLON.Vector3.Forward()), bubble);
+      return;
+    } else if (!this.hasBubble(below.subtract(BABYLON.Vector3.Backward()))) {
+      this.setBubble(below.subtract(BABYLON.Vector3.Backward()), bubble);
+      return;
+    }
   }
 
   public anyBubblesBeyondBaseline() {
-    for (const layer of this.lattice) {
-      if (layer.level <= 0) {
+    for (const bubble of this.getBubbles()) {
+      if (bubble.getMesh().position.y <= 0) {
         return true;
       }
     }
@@ -198,43 +198,67 @@ export class Level {
     return false;
   }
 
+  private getBubble(coords: BABYLON.Vector3) {
+    return this.lattice.get(`${coords.x},${coords.y},${coords.z}`);
+  }
+
+  private setBubble(coords: BABYLON.Vector3, bubble: Bubble) {
+    this.lattice.set(`${coords.x},${coords.y},${coords.z}`, bubble);
+
+    if (bubble) {
+      const xOffset = 0.5;
+      const zOffset = 0.5;
+
+      const x = coords.x + xOffset - LEVEL_WIDTH * 0.5;
+      const z = coords.z + zOffset - LEVEL_DEPTH * 0.5;
+
+      bubble.getMesh().position.set(x, coords.y, z);
+    }
+  }
+
+  private hasBubble(coords: BABYLON.Vector3) {
+    return !!this.lattice.get(`${coords.x},${coords.y},${coords.z}`);
+  }
+
+  private getCoords(bubble: Bubble) {
+    for (const [key, value] of this.lattice.entries()) {
+      if (value === bubble) {
+        const [x, y, z] = key.split(",").map(v => Number.parseInt(v));
+        return this.clamp(new BABYLON.Vector3(x, y, z));
+      }
+    }
+  }
+
   public insertNextLayer() {
     // Step all layers
-    for (const layer of this.lattice) {
-      layer.stepDown();
-    }
+    for (let l = 0; l < LEVEL_LAYERS; l++) {
+      for (let w = 0; w < LEVEL_WIDTH; w++) {
+        for (let d = 0; d < LEVEL_DEPTH; d++) {
+          const coordThis = new BABYLON.Vector3(w, l, d);
+          const coordAbove = new BABYLON.Vector3(w, l + 1, d);
+          const bubbleAbove = this.getBubble(coordAbove);
+          const bubbleThis = this.getBubble(coordThis);
 
-    const type =
-      this.lattice.length > 0
-        ? this.lattice[0].type === LayerType.Outer
-          ? LayerType.Inner
-          : LayerType.Outer
-        : LayerType.Outer;
-    const nWidth = LEVEL_WIDTH - (type === LayerType.Inner ? 1 : 0);
-    const nDepth = LEVEL_DEPTH - (type === LayerType.Inner ? 1 : 0);
+          this.setBubble(coordThis, null);
 
-    const xOffset = type === LayerType.Inner ? 1 : 0.5;
-    const zOffset = type === LayerType.Inner ? 1 : 0.5;
+          if (bubbleAbove) {
+            this.setBubble(coordThis, bubbleAbove);
+          }
 
-    const layer = new Layer(LEVEL_LAYERS);
-
-    for (let w = 0; w < nWidth; w++) {
-      for (let d = 0; d < nDepth; d++) {
-        const bubble = this.bubbleFactory.createBubble();
-
-        const imposter = bubble.getImposter();
-        imposter.setMass(0);
-
-        const mesh = bubble.getMesh();
-        const x = w + xOffset - LEVEL_WIDTH * 0.5;
-        const z = d + zOffset - LEVEL_DEPTH * 0.5;
-
-        mesh.position.set(x, LEVEL_LAYERS, z);
-
-        layer.bubbles.push(bubble);
+          if (l === 0 && bubbleThis) {
+            bubbleThis.destroy();
+          }
+        }
       }
     }
 
-    this.lattice.unshift(layer);
+    for (let w = 0; w < LEVEL_WIDTH; w++) {
+      for (let d = 0; d < LEVEL_DEPTH; d++) {
+        const bubble = this.bubbleFactory.createBubble();
+        bubble.getImposter().setMass(0);
+        const coordThis = new BABYLON.Vector3(w, LEVEL_LAYERS, d);
+        this.setBubble(coordThis, bubble);
+      }
+    }
   }
 }
