@@ -141,51 +141,100 @@ export class Level {
     return BABYLON.Vector3.Clamp(coord, min, max);
   }
 
-  public onBubbleCollide(bubble: Bubble, other: Bubble) {
+  private localColors(bubble: Bubble) {
+    debugger;
+    const dirs = [
+      BABYLON.Vector3.Left(),
+      BABYLON.Vector3.Right(),
+      BABYLON.Vector3.Down(),
+      BABYLON.Vector3.Up()
+    ];
+
+    const localWithColor = new Set<Bubble>();
+
+    const searchAround = (bub: Bubble) => {
+      if (bub.getColor() !== bubble.getColor()) {
+        return;
+      }
+
+      if (localWithColor.has(bub)) {
+        return;
+      }
+      localWithColor.add(bub);
+
+      const coords = this.getCoords(bub);
+      if (!coords) {
+        return;
+      }
+
+      for (const dir of dirs) {
+        const coordDir = coords.add(dir);
+        const coordBubble = this.getBubble(coordDir);
+        if (coordBubble) {
+          searchAround(coordBubble);
+        }
+      }
+    };
+
+    searchAround(bubble);
+    /*
+    for (const b of localWithColor.values()) {
+      const c = this.getCoords(b);
+      if (c) {
+        this.removeBubble(c);
+      }
+    }
+    */
+
+    return Array.from(localWithColor.values());
+  }
+
+  public onBubbleCollide(bubble: Bubble, other: Bubble): Bubble[] {
     const coords = this.getCoords(other);
     if (!coords) {
       return;
     }
-    other.getMesh().scaling.setAll(0.75);
 
     const imposter = bubble.getImposter();
     imposter.setMass(0);
 
     if (!this.hasBubble(coords)) {
       this.setBubble(coords, bubble);
-      return;
+      return this.localColors(bubble);
     } else if (!this.hasBubble(coords.subtract(BABYLON.Vector3.Left()))) {
       this.setBubble(coords.subtract(BABYLON.Vector3.Left()), bubble);
-      return;
+      return this.localColors(bubble);
     } else if (!this.hasBubble(coords.subtract(BABYLON.Vector3.Right()))) {
       this.setBubble(coords.subtract(BABYLON.Vector3.Right()), bubble);
-      return;
+      return this.localColors(bubble);
     } else if (!this.hasBubble(coords.subtract(BABYLON.Vector3.Forward()))) {
       this.setBubble(coords.subtract(BABYLON.Vector3.Forward()), bubble);
-      return;
+      return this.localColors(bubble);
     } else if (!this.hasBubble(coords.subtract(BABYLON.Vector3.Backward()))) {
       this.setBubble(coords.subtract(BABYLON.Vector3.Backward()), bubble);
-      return;
+      return this.localColors(bubble);
     }
 
     const below = coords.add(BABYLON.Vector3.Down());
 
     if (!this.hasBubble(below)) {
       this.setBubble(below, bubble);
-      return;
+      return this.localColors(bubble);
     } else if (!this.hasBubble(below.subtract(BABYLON.Vector3.Left()))) {
       this.setBubble(below.subtract(BABYLON.Vector3.Left()), bubble);
-      return;
+      return this.localColors(bubble);
     } else if (!this.hasBubble(below.subtract(BABYLON.Vector3.Right()))) {
       this.setBubble(below.subtract(BABYLON.Vector3.Right()), bubble);
-      return;
+      return this.localColors(bubble);
     } else if (!this.hasBubble(below.subtract(BABYLON.Vector3.Forward()))) {
       this.setBubble(below.subtract(BABYLON.Vector3.Forward()), bubble);
-      return;
+      return this.localColors(bubble);
     } else if (!this.hasBubble(below.subtract(BABYLON.Vector3.Backward()))) {
       this.setBubble(below.subtract(BABYLON.Vector3.Backward()), bubble);
-      return;
+      return this.localColors(bubble);
     }
+
+    return [];
   }
 
   public anyBubblesBeyondBaseline() {
@@ -196,6 +245,10 @@ export class Level {
     }
 
     return false;
+  }
+
+  private removeBubble(coords: BABYLON.Vector3) {
+    return this.lattice.delete(`${coords.x},${coords.y},${coords.z}`);
   }
 
   private getBubble(coords: BABYLON.Vector3) {
