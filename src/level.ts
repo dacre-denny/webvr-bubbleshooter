@@ -8,26 +8,41 @@ const LEVEL_LAYERS = 10;
 const WALL_THICKNESS = 0.1;
 
 export class Level {
-  private bubbleFactory: BubbleFactory;
+  //private bubbleFactory: BubbleFactory;
 
   private lattice: Map<string, Bubble>;
+  private level: BABYLON.Mesh;
 
   public static belowBaseline(bubble: Bubble): boolean {
     return bubble.getMesh().position.y <= 0;
   }
 
-  constructor(scene: BABYLON.Scene, bubbleFactory: BubbleFactory) {
+  constructor() {
     this.lattice = new Map();
-    this.bubbleFactory = bubbleFactory;
+    //this.bubbleFactory = bubbleFactory;
 
-    this.create(scene);
+    //this.create(scene);
   }
 
-  public dispose() {
+  private dispose() {
+    if (this.level) {
+      this.level.physicsImpostor.dispose();
+      this.level.dispose(false, true);
+      this.level = null;
+    }
 
+    for (const bubble of this.lattice.values()) {
+      if (bubble) {
+        bubble.dispose();
+      }
+    }
+
+    this.lattice.clear();
   }
 
   public create(scene: BABYLON.Scene) {
+    this.dispose();
+
     const material = new BABYLON.StandardMaterial("level.material", scene);
     material.diffuseColor = BABYLON.Color3.White();
 
@@ -83,8 +98,8 @@ export class Level {
 
     const level = new BABYLON.Mesh("level", scene);
 
-    for (const wall of walls) {
-      var mesh = BABYLON.MeshBuilder.CreateBox("level.left", wall, scene);
+    walls.forEach((wall, index) => {
+      var mesh = BABYLON.MeshBuilder.CreateBox(`level.${index}`, wall, scene);
       mesh.position.set(wall.position.x, LEVEL_LAYERS * 0.5, wall.position.z);
       mesh.visibility = 0.5;
 
@@ -99,7 +114,7 @@ export class Level {
       mesh.checkCollisions = true;
 
       level.addChild(mesh);
-    }
+    });
 
     const impostor = new BABYLON.PhysicsImpostor(
       level,
@@ -109,6 +124,8 @@ export class Level {
     );
     level.physicsImpostor = impostor;
     level.checkCollisions = true;
+
+    this.level = level;
   }
 
   public getBubbles() {
@@ -264,7 +281,7 @@ export class Level {
     }
   }
 
-  public insertNextLayer() {
+  public insertNextLayer(bubbleFactory: BubbleFactory) {
     // Step all layers
     for (let l = 0; l < LEVEL_LAYERS; l++) {
       for (let w = 0; w < LEVEL_WIDTH; w++) {
@@ -289,7 +306,7 @@ export class Level {
 
     for (let w = 0; w < LEVEL_WIDTH; w++) {
       for (let d = 0; d < LEVEL_DEPTH; d++) {
-        const bubble = this.bubbleFactory.createBubble();
+        const bubble = bubbleFactory.createBubble();
         bubble.getImposter().setMass(0);
         const coordThis = new BABYLON.Vector3(w, LEVEL_LAYERS, d);
         this.setBubble(coordThis, bubble);

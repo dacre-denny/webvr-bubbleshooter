@@ -3,11 +3,16 @@ import * as BABYLON from "babylonjs";
 export class Launcher {
   mesh: BABYLON.Mesh;
 
-  constructor(scene: BABYLON.Scene) {
-    this.create(scene);
+  private dispose() {
+    if (this.mesh) {
+      this.mesh.dispose(false, true);
+      this.mesh = null;
+    }
   }
 
-  private create(scene: BABYLON.Scene) {
+  public create(scene: BABYLON.Scene) {
+    this.dispose();
+
     var launcherTube = BABYLON.MeshBuilder.CreateCylinder(
       "launcher.tube",
       {

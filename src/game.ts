@@ -43,8 +43,8 @@ export class Game {
     this.bubbleBurstQueue = [];
 
     this.bubbleFactory = new BubbleFactory(this.scene);
-    this.level = new Level(this.scene, this.bubbleFactory);
-    this.launcher = new Launcher(this.scene);
+    this.level = new Level();
+    this.launcher = new Launcher();
   }
 
   private beforeFrame() {
@@ -71,7 +71,7 @@ export class Game {
       // If no shots remaining then add bubble layer to level and
       // reset shot attempts
       if (this.gameShotAttempts <= 0) {
-        this.level.insertNextLayer();
+        this.level.insertNextLayer(this.bubbleFactory);
 
         if (this.level.getBubbles().some(Level.belowBaseline)) {
           // If any bubble exists below baseline, then game is over
@@ -121,8 +121,6 @@ export class Game {
   }
 
   public reset() {
-    this.level.dispose();
-
     if (this.bubbleShot) {
       this.bubbleShot.dispose();
     }
@@ -136,15 +134,21 @@ export class Game {
 
     this.bubbleShot = null;
     this.bubbleBurstQueue = [];
+
+    this.level.create(this.scene);
+    this.launcher.create(this.scene);
   }
 
-  public star() {
+  public start() {
     this.reset();
     this.gameState = GameState.PLAYING;
-    this.level.insertNextLayer();
+    this.level.insertNextLayer(this.bubbleFactory);
   }
 
   onReady() {
+    this.launcher.create(this.scene);
+    this.level.create(this.scene);
+
     this.scene.onBeforeRenderObservable.add(() => {
       this.beforeFrame();
     });
@@ -199,7 +203,7 @@ export class Game {
 
     window.addEventListener("keyup", e => {
       if (e.keyCode === 32) {
-        this.star();
+        this.start();
       } else {
         if (this.gameState === GameState.PLAYING) {
           this.shootBubble();
@@ -210,9 +214,10 @@ export class Game {
     window.addEventListener("mousemove", (event: MouseEvent) => {
       //   const x = event.x / document.body.clientWidth - 0.5;
       //   const y = event.y / document.body.clientHeight - 0.5;
-
-      const dir = new BABYLON.Vector3(1, 0, 0);
-      this.launcher.setDirection(dir);
+      if (this.gameState === GameState.PLAYING) {
+        const dir = new BABYLON.Vector3(1, 0, 0);
+        this.launcher.setDirection(dir);
+      }
     });
   }
 }
