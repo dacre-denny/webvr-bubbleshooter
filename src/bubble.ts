@@ -11,6 +11,10 @@ export class Bubble {
   mesh: BABYLON.InstancedMesh;
   color: Colors;
 
+  public static fromImposter(imposter: BABYLON.PhysicsImpostor): Bubble {
+    return (imposter.object as any).bubble as Bubble;
+  }
+
   constructor(mesh: BABYLON.InstancedMesh, color: Colors) {
     mesh.physicsImpostor = new BABYLON.PhysicsImpostor(
       mesh,

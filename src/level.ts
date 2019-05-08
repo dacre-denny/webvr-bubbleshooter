@@ -171,6 +171,7 @@ export class Level {
         const coordDir = coords.add(dir);
         const coordBubble = this.getBubble(coordDir);
         if (coordBubble) {
+          this.removeBubble(coordDir);
           searchAround(coordBubble);
         }
       }
