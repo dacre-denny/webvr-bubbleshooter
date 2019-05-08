@@ -12,21 +12,22 @@ const enum GameState {
 
 export class Game {
   static readonly SHOOT_POWER = 600;
+  static readonly SHOT_ATTEMPTS = 3;
 
   private canvas: HTMLCanvasElement;
   private engine: BABYLON.Engine;
   private scene: BABYLON.Scene;
   private camera: BABYLON.ArcRotateCamera;
 
-  private state: GameState;
-
-  private debug: BABYLON.Mesh;
+  private gameState: GameState;
+  private gameShotAttempts: number;
 
   private launcher: Launcher;
   private level: Level;
+
   private bubbleFactory: BubbleFactory;
-  private bubble: Bubble;
-  private bubblesToBurst: Array<Bubble>;
+  private bubbleShot: Bubble;
+  private bubbleBurstQueue: Array<Bubble>;
 
   constructor(canvasElement: string) {
     this.canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -35,26 +36,61 @@ export class Game {
     this.scene = new BABYLON.Scene(this.engine);
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
 
-    this.bubble = null;
+    this.gameState = GameState.IDLE;
+    this.gameShotAttempts = Game.SHOT_ATTEMPTS;
+
+    this.bubbleShot = null;
+    this.bubbleBurstQueue = [];
+
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level(this.scene, this.bubbleFactory);
-    this.launcher = new Launcher(this.scene, this.level, this.bubbleFactory);
+    this.launcher = new Launcher(this.scene);
   }
 
   private beforeFrame() {
-    if (this.bubblesToBurst.length > 0) {
-      const bubble = this.bubblesToBurst.pop();
+    if (this.bubbleBurstQueue.length > 0) {
+      const bubble = this.bubbleBurstQueue.pop();
 
-      bubble.destroy();
+      bubble.dispose();
+    }
+  }
+
+  public onBubbleLanded(colliderBubble: Bubble, otherBubble: Bubble) {
+    const { level } = this;
+    // Insert bubble into level
+    level.insertBubble(colliderBubble, otherBubble);
+    const burstBubbles = level.getLocalBubblesOfColor(colliderBubble);
+
+    if (burstBubbles.length > 0) {
+      // If bubbles to burst have been found, add to the burst queue
+      this.bubbleBurstQueue.push(...burstBubbles);
+    } else {
+      // If not bubbles to burst, then decrement shot attempts
+      this.gameShotAttempts--;
+
+      // If no shots remaining then add bubble layer to level and
+      // reset shot attempts
+      if (this.gameShotAttempts <= 0) {
+        this.level.insertNextLayer();
+
+        if (this.level.getBubbles().some(Level.belowBaseline)) {
+          // If any bubble exists below baseline, then game is over
+          this.gameState = GameState.SCOREBOARD;
+        } else {
+          // If all bubbles above baseline, continue game and reset
+          // shot count
+          this.gameShotAttempts = Game.SHOT_ATTEMPTS;
+        }
+      }
     }
   }
 
   public shootBubble() {
-    if (this.bubble) {
+    if (this.bubbleShot) {
       return;
     }
 
-    if (this.bubblesToBurst.length > 0) {
+    if (this.bubbleBurstQueue.length > 0) {
       return;
     }
 
@@ -69,12 +105,7 @@ export class Game {
       const colliderBubble = Bubble.fromImposter(collider);
       const otherBubble = Bubble.fromImposter(other);
 
-      const bubblesToPop = this.level.onBubbleCollide(
-        colliderBubble,
-        otherBubble
-      );
-
-      this.bubblesToBurst.push(...bubblesToPop);
+      this.onBubbleLanded(colliderBubble, otherBubble);
     };
 
     const direction = this.launcher.getDirection();
@@ -86,35 +117,45 @@ export class Game {
     imposter.registerOnPhysicsCollide(imposters, handleCollide);
     imposter.applyForce(force, BABYLON.Vector3.Zero());
 
-    this.bubble = bubble;
+    this.bubbleShot = bubble;
   }
 
-  createScene(): void {
+  public reset() {
+    this.level.dispose();
+
+    if (this.bubbleShot) {
+      this.bubbleShot.dispose();
+    }
+
+    for (const bubble of this.bubbleBurstQueue) {
+      bubble.dispose();
+    }
+
+    this.gameState = GameState.IDLE;
+    this.gameShotAttempts = Game.SHOT_ATTEMPTS;
+
+    this.bubbleShot = null;
+    this.bubbleBurstQueue = [];
+  }
+
+  public star() {
+    this.reset();
+    this.gameState = GameState.PLAYING;
     this.level.insertNextLayer();
-    // this.level.insertNextLayer();
+  }
 
-    this.scene.executeWhenReady(() => {});
+  onReady() {
+    this.scene.onBeforeRenderObservable.add(() => {
+      this.beforeFrame();
+    });
 
-    this.debug = BABYLON.MeshBuilder.CreateBox(
-      "debug",
-      {
-        height: 0.1,
-        width: 0.1,
-        depth: 0.1
-      },
-      this.scene
-    );
+    // Run the render loop.
+    this.engine.runRenderLoop(() => {
+      this.scene.render();
+    });
+  }
 
-    const physicsEngine = this.scene.getPhysicsEngine();
-    physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
-
-    /*
-      const vrHelper = this.scene.createDefaultVRExperience({
-        createDeviceOrientationCamera: false
-      });
-      vrHelper.enableTeleportation({ floorMeshes: [environment.ground] });
-      */
-
+  launch(): void {
     // Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
     this.camera = new BABYLON.ArcRotateCamera(
       "camera",
@@ -128,24 +169,28 @@ export class Game {
     // Attach the camera to the canvas.
     this.camera.attachControl(this.canvas, false);
 
+    const physicsEngine = this.scene.getPhysicsEngine();
+    physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
+
+    /*
+    // this.engine.enableVR()
+    // this.engine.initWebVR()
+      const vrHelper = this.scene.createDefaultVRExperience({
+        createDeviceOrientationCamera: false
+      });
+      vrHelper.enableTeleportation({ floorMeshes: [environment.ground] });
+      */
+
+    this.scene.executeWhenReady(() => {
+      this.onReady();
+    });
+
     // Create light
     new BABYLON.HemisphericLight(
       "light",
       new BABYLON.Vector3(0, 1, 0),
       this.scene
     );
-  }
-
-  launch(): void {
-    // Run the render loop.
-    this.engine.runRenderLoop(() => {
-      this.scene.render();
-    });
-
-    // this.engine.enableVR()
-    // this.engine.initWebVR()
-
-    this.scene.onAfterPhysicsObservable.add(this.beforeFrame);
 
     // The canvas/window resize event handler.
     window.addEventListener("resize", () => {
@@ -154,26 +199,20 @@ export class Game {
 
     window.addEventListener("keyup", e => {
       if (e.keyCode === 32) {
-        this.level.insertNextLayer();
+        this.star();
       } else {
-        if (!this.level.anyBubblesBeyondBaseline()) {
+        if (this.gameState === GameState.PLAYING) {
           this.shootBubble();
         }
       }
     });
 
     window.addEventListener("mousemove", (event: MouseEvent) => {
-      const x = event.x / document.body.clientWidth - 0.5;
-      const y = event.y / document.body.clientHeight - 0.5;
+      //   const x = event.x / document.body.clientWidth - 0.5;
+      //   const y = event.y / document.body.clientHeight - 0.5;
 
-      const dir = new BABYLON.Vector3(x, 1, y).normalize().scale(10);
-
-      if (this.launcher) {
-        this.debug.position.copyFrom(dir);
-        this.debug.position.y = 0;
-
-        this.launcher.setDirection(dir);
-      }
+      const dir = new BABYLON.Vector3(1, 0, 0);
+      this.launcher.setDirection(dir);
     });
   }
 }

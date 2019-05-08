@@ -42,7 +42,7 @@ export class Bubble {
     return this.mesh;
   }
 
-  public destroy() {
+  public dispose() {
     this.mesh.physicsImpostor.dispose();
     this.mesh.dispose();
 

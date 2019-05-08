@@ -1,21 +1,10 @@
 import * as BABYLON from "babylonjs";
-import { BubbleFactory } from "./bubbleFactory";
-import { Level } from "./level";
-import { Bubble } from "./bubble";
 
 export class Launcher {
   mesh: BABYLON.Mesh;
-  level: Level;
-  bubbleFactory: BubbleFactory;
 
-  constructor(
-    scene: BABYLON.Scene,
-    level: Level,
-    bubbleFactory: BubbleFactory
-  ) {
+  constructor(scene: BABYLON.Scene) {
     this.create(scene);
-    this.level = level;
-    this.bubbleFactory = bubbleFactory;
   }
 
   private create(scene: BABYLON.Scene) {
