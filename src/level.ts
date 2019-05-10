@@ -4,7 +4,7 @@ import { BubbleFactory } from "./bubbleFactory";
 
 const LEVEL_WIDTH = 8;
 const LEVEL_DEPTH = 8;
-const LEVEL_LAYERS = 10;
+const LEVEL_LAYERS = 5;
 const WALL_THICKNESS = 0.1;
 
 export class Level {

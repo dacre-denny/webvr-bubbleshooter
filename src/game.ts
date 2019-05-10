@@ -17,7 +17,7 @@ export class Game {
   private canvas: HTMLCanvasElement;
   private engine: BABYLON.Engine;
   private scene: BABYLON.Scene;
-  private camera: BABYLON.ArcRotateCamera;
+  private camera: BABYLON.Camera;
 
   private gameState: GameState;
   private gameShotAttempts: number;
@@ -35,6 +35,15 @@ export class Game {
 
     this.scene = new BABYLON.Scene(this.engine);
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
+
+    this.canvas.addEventListener("pointerdown", () => {});
+
+    // Create light
+    new BABYLON.HemisphericLight(
+      "light",
+      new BABYLON.Vector3(0, 1, 0),
+      this.scene
+    );
 
     this.gameState = GameState.IDLE;
     this.gameShotAttempts = Game.SHOT_ATTEMPTS;
@@ -161,17 +170,14 @@ export class Game {
 
   launch(): void {
     // Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
-    this.camera = new BABYLON.ArcRotateCamera(
+    this.camera = new BABYLON.FreeCamera(
       "camera",
-      -Math.PI / 2,
-      Math.PI / 2,
-      20,
-      new BABYLON.Vector3(0, 3, 0),
+      new BABYLON.Vector3(0.5, 0, 0.5),
       this.scene
     );
 
     // Attach the camera to the canvas.
-    this.camera.attachControl(this.canvas, false);
+    // this.camera.attachControl(this.canvas, false);
 
     const physicsEngine = this.scene.getPhysicsEngine();
     physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
@@ -179,22 +185,35 @@ export class Game {
     /*
     // this.engine.enableVR()
     // this.engine.initWebVR()
-      const vrHelper = this.scene.createDefaultVRExperience({
-        createDeviceOrientationCamera: false
-      });
-      vrHelper.enableTeleportation({ floorMeshes: [environment.ground] });
-      */
+    */
+
+    const groundMaterial = new BABYLON.StandardMaterial(
+      `ground.material`,
+      this.scene
+    );
+    groundMaterial.diffuseColor = BABYLON.Color3.Gray();
+
+    const ground = BABYLON.MeshBuilder.CreatePlane("ground", {
+      size: 25,
+      sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+      sourcePlane: new BABYLON.Plane(0, 1, 0, 1)
+    });
+    ground.material = groundMaterial;
+    ground.position.addInPlace(BABYLON.Vector3.Down());
+
+    const vrHelper = this.scene.createDefaultVRExperience({
+      createDeviceOrientationCamera: true,
+      trackPosition: true,
+      floorMeshes: [ground]
+    });
+
+    vrHelper.enableInteractions();
+    vrHelper.enterVR();
 
     this.scene.executeWhenReady(() => {
       this.onReady();
+      this.start();
     });
-
-    // Create light
-    new BABYLON.HemisphericLight(
-      "light",
-      new BABYLON.Vector3(0, 1, 0),
-      this.scene
-    );
 
     // The canvas/window resize event handler.
     window.addEventListener("resize", () => {
@@ -203,7 +222,7 @@ export class Game {
 
     window.addEventListener("keyup", e => {
       if (e.keyCode === 32) {
-        this.start();
+        this.level.insertNextLayer(this.bubbleFactory);
       } else {
         if (this.gameState === GameState.PLAYING) {
           this.shootBubble();
