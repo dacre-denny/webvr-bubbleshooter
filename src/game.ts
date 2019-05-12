@@ -169,46 +169,63 @@ export class Game {
   }
 
   launch(): void {
-    // Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
-    this.camera = new BABYLON.FreeCamera(
-      "camera",
-      new BABYLON.Vector3(0.5, 0, 0.5),
-      this.scene
-    );
+    const VR_MODE = false;
 
-    // Attach the camera to the canvas.
-    // this.camera.attachControl(this.canvas, false);
+    if (VR_MODE) {
+      const groundMaterial = new BABYLON.StandardMaterial(
+        `ground.material`,
+        this.scene
+      );
+      groundMaterial.diffuseColor = BABYLON.Color3.Gray();
+
+      const ground = BABYLON.MeshBuilder.CreatePlane("ground", {
+        size: 25,
+        sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+        sourcePlane: new BABYLON.Plane(0, 1, 0, 1)
+      });
+      ground.material = groundMaterial;
+      ground.position.addInPlace(BABYLON.Vector3.Down());
+      // Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
+      this.camera = new BABYLON.FreeCamera(
+        "camera",
+        new BABYLON.Vector3(0, 0, 0),
+        this.scene
+      );
+      const vrHelper = this.scene.createDefaultVRExperience({
+        createDeviceOrientationCamera: true,
+        trackPosition: true
+      });
+
+      vrHelper.enableTeleportation({
+        floorMeshes: [ground]
+      });
+
+      vrHelper.enableInteractions();
+
+      vrHelper.raySelectionPredicate = (mesh: BABYLON.AbstractMesh) => {
+        console.log(mesh.name);
+
+        return false;
+      };
+
+      //vrHelper.enterVR();
+      vrHelper.onEnteringVR.add(() => {});
+    } else {
+      const camera = new BABYLON.UniversalCamera(
+        "camera",
+        new BABYLON.Vector3(3, -10, 3),
+        this.scene
+      );
+      camera.fov = 1.1;
+      camera.setTarget(new BABYLON.Vector3(0, 10, 0));
+
+      camera.attachControl(this.canvas, false);
+
+      this.camera = camera;
+    }
 
     const physicsEngine = this.scene.getPhysicsEngine();
     physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
-
-    /*
-    // this.engine.enableVR()
-    // this.engine.initWebVR()
-    */
-
-    const groundMaterial = new BABYLON.StandardMaterial(
-      `ground.material`,
-      this.scene
-    );
-    groundMaterial.diffuseColor = BABYLON.Color3.Gray();
-
-    const ground = BABYLON.MeshBuilder.CreatePlane("ground", {
-      size: 25,
-      sideOrientation: BABYLON.Mesh.DOUBLESIDE,
-      sourcePlane: new BABYLON.Plane(0, 1, 0, 1)
-    });
-    ground.material = groundMaterial;
-    ground.position.addInPlace(BABYLON.Vector3.Down());
-
-    const vrHelper = this.scene.createDefaultVRExperience({
-      createDeviceOrientationCamera: true,
-      trackPosition: true,
-      floorMeshes: [ground]
-    });
-
-    vrHelper.enableInteractions();
-    vrHelper.enterVR();
 
     this.scene.executeWhenReady(() => {
       this.onReady();
@@ -230,6 +247,7 @@ export class Game {
       }
     });
 
+    /*
     window.addEventListener("mousemove", (event: MouseEvent) => {
       //   const x = event.x / document.body.clientWidth - 0.5;
       //   const y = event.y / document.body.clientHeight - 0.5;
@@ -238,5 +256,6 @@ export class Game {
         this.launcher.setDirection(dir);
       }
     });
+    */
   }
 }
