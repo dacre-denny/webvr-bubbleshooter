@@ -8,11 +8,19 @@ export const enum Colors {
 }
 
 export class Bubble {
-  mesh: BABYLON.InstancedMesh;
-  color: Colors;
+  private mesh: BABYLON.InstancedMesh;
+  private color: Colors;
 
   public static fromImposter(imposter: BABYLON.PhysicsImpostor): Bubble {
     return (imposter.object as any).bubble as Bubble;
+  }
+
+  public static fromAbstractMesh(mesh: BABYLON.AbstractMesh): Bubble {
+    return (mesh as any).bubble as Bubble;
+  }
+
+  public static isBubble(mesh: BABYLON.AbstractMesh): boolean {
+    return !!(mesh as any).bubble;
   }
 
   constructor(mesh: BABYLON.InstancedMesh, color: Colors) {

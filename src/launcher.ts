@@ -24,7 +24,10 @@ export class Launcher {
       },
       scene
     ).convertToFlatShadedMesh();
-    launcherTube.position.y = 1;
+
+    // launcherTube.setPivotPoint(BABYLON)
+    launcherTube.translate(BABYLON.Vector3.Forward(), 1);
+    launcherTube.rotate(BABYLON.Vector3.Left(), Math.PI / 2);
 
     let launcherBase = BABYLON.MeshBuilder.CreateIcoSphere(
       "launcher.base",
@@ -34,6 +37,7 @@ export class Launcher {
     );
 
     const launcher = new BABYLON.Mesh("launcher");
+
     launcher.addChild(launcherBase);
     launcher.addChild(launcherTube);
 
@@ -44,7 +48,7 @@ export class Launcher {
     return this.mesh.getDirection(new BABYLON.Vector3(0, 1, 0));
   }
 
-  public setDirection(direction: BABYLON.Vector3) {
-    this.mesh.lookAt(direction);
+  public lookAt(position: BABYLON.Vector3) {
+    this.mesh.lookAt(position);
   }
 }

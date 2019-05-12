@@ -115,7 +115,7 @@ export class UI {
 
     var panel = new GUI.StackPanel();
     var header = new GUI.TextBlock();
-    header.text = "BubblesVR";
+    header.text = "bub"; //"BubblesVR";
     header.height = "60px";
     header.color = "white";
     header.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;

@@ -180,6 +180,11 @@ export class Game {
 
   onReady() {
     this.launcher.create(this.scene);
+
+    setInterval(() => {
+      this.launcher.lookAt(null);
+    }, 10);
+
     this.level.create(this.scene);
 
     this.onMainMenu();
@@ -250,7 +255,7 @@ export class Game {
         this.scene
       );
       camera.fov = 1.1;
-      camera.setTarget(new BABYLON.Vector3(0, 10, 0));
+      camera.setTarget(new BABYLON.Vector3(0, 1, 0));
 
       camera.attachControl(this.canvas, false);
 
@@ -279,15 +284,28 @@ export class Game {
       }
     });
 
-    /*
     window.addEventListener("mousemove", (event: MouseEvent) => {
-      //   const x = event.x / document.body.clientWidth - 0.5;
-      //   const y = event.y / document.body.clientHeight - 0.5;
-      if (this.gameState === GameState.PLAYING) {
-        const dir = new BABYLON.Vector3(1, 0, 0);
-        this.launcher.setDirection(dir);
+      const pickingInfo = this.scene.pick(
+        event.clientX,
+        event.clientY,
+        Bubble.isBubble,
+        false,
+        this.camera
+      );
+      if (pickingInfo.pickedMesh) {
+        const bubble = Bubble.fromAbstractMesh(pickingInfo.pickedMesh);
+
+        this.launcher.lookAt(bubble.getMesh().position);
       }
+
+      // //   const x = event.x / document.body.clientWidth - 0.5;
+      // //   const y = event.y / document.body.clientHeight - 0.5;
+      // if (this.gameState === GameState.PLAYING) {
+      //   const dir = new BABYLON.Vector3(1, 0, 0);
+      //   this.launcher.setDirection(dir);
+      // }
     });
-    */
+    /*
+     */
   }
 }
