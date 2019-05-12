@@ -12,8 +12,6 @@ const xOffset = 0.5;
 const zOffset = 0.5;
 
 export class Level {
-  //private bubbleFactory: BubbleFactory;
-
   private lattice: Map<string, Bubble>;
   private level: BABYLON.Mesh;
 
@@ -101,7 +99,11 @@ export class Level {
 
     walls.forEach((wall, index) => {
       var mesh = BABYLON.MeshBuilder.CreateBox(`level.${index}`, wall, scene);
-      mesh.position.set(wall.position.x, LEVEL_LAYERS * 0.5, wall.position.z);
+      mesh.position.set(
+        wall.position.x,
+        Bubble.RADIUS + LEVEL_LAYERS * 0.5,
+        wall.position.z
+      );
       mesh.visibility = 0.5;
 
       const imposter = new BABYLON.PhysicsImpostor(
@@ -150,49 +152,85 @@ export class Level {
   }
 
   public getLocalBubblesOfColor(bubble: Bubble) {
-    const dirs = [
-      BABYLON.Vector3.Left(),
-      BABYLON.Vector3.Right(),
-      BABYLON.Vector3.Down(),
-      BABYLON.Vector3.Up()
+    const options = [
+      [-1, -1, -1],
+      [-1, -1, +0],
+      [-1, -1, +1],
+      [-1, +0, -1],
+      [-1, +0, +0],
+      [-1, +0, +1],
+      [-1, +1, -1],
+      [-1, +1, +0],
+      [-1, +1, +1],
+      [+0, -1, -1],
+      [+0, -1, +0],
+      [+0, -1, +1],
+      [+0, +0, -1],
+      [+0, +0, +0],
+      [+0, +0, +1],
+      [+0, +1, -1],
+      [+0, +1, +0],
+      [+0, +1, +1],
+      [+1, -1, -1],
+      [+1, -1, +0],
+      [+1, -1, +1],
+      [+1, +0, -1],
+      [+1, +0, +0],
+      [+1, +0, +1],
+      [+1, +1, -1],
+      [+1, +1, +0],
+      [+1, +1, +1]
     ];
 
-    const localWithColor = new Set<Bubble>();
-    /*
-    const searchAround = (bub: Bubble) => {
-      if (bub.getColor() !== bubble.getColor()) {
+    let indicies: number[];
+
+    for (const [key, bub] of this.lattice) {
+      if (bub === bubble) {
+        indicies = this.getIndicies(key);
+        break;
+      }
+    }
+
+    if (!indicies) {
+      return;
+    }
+
+    const bubbles = new Set<Bubble>();
+
+    const iterate = ([x, y, z]: number[]) => {
+      const key = this.getKey(x, y, z);
+      const b = this.lattice.get(key);
+
+      if (!b) {
         return;
       }
 
-      if (localWithColor.has(bub)) {
-        return;
-      }
-      localWithColor.add(bub);
-
-      const coords = this.getKeyBubble(bub);
-      if (!coords) {
+      if (b.getColor() !== bubble.getColor()) {
         return;
       }
 
-      for (const dir of dirs) {
-        const coordDir = coords.add(dir);
-        const coordBubble = this.getBubble(coordDir);
-        if (coordBubble) {
-          searchAround(coordBubble);
-        }
+      if (bubbles.has(b)) {
+        return;
+      }
+      bubbles.add(b);
+
+      for (const [i, j, k] of options) {
+        iterate([i + x, j + y, k + z]);
       }
     };
 
-    searchAround(bubble);
-*/
-    return Array.from(localWithColor.values());
+    iterate(indicies);
+
+    return Array.from(bubbles.values());
   }
 
   public insertBubble(bubble: Bubble) {
-    const position = bubble.getMesh().position;
+    const { position } = bubble.getMesh();
     const x = Math.round(position.x);
     const y = Math.round(position.y);
     const z = Math.round(position.z);
+
+    const key = this.getKey(x, y, z);
 
     const imposter = bubble.getImposter();
     imposter.setMass(0);
@@ -201,8 +239,7 @@ export class Level {
     position.y = y;
     position.z = z;
 
-    this.lattice.set(this.getKey(x, y, z), bubble);
-    return true;
+    this.lattice.set(key, bubble);
   }
 
   private getKey(x: number, y: number, z: number) {
@@ -210,6 +247,14 @@ export class Level {
     y = clamp(y, 0, LEVEL_LAYERS);
     z = clamp(z, -LEVEL_DEPTH, LEVEL_DEPTH);
     return `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`;
+  }
+
+  private getIndicies(key: string): [number, number, number] {
+    return key.split(",").map(i => Number.parseInt(i)) as [
+      number,
+      number,
+      number
+    ];
   }
 
   public removeBubble(bubble: Bubble) {
@@ -254,11 +299,10 @@ export class Level {
 
           const bubble = this.lattice.get(keySrc);
           if (bubble) {
+            place(bubble, x, y + 1, z);
             this.lattice.set(keyDest, bubble);
           }
           this.lattice.set(keySrc, null);
-
-          place(bubble, x, y, z);
         }
       }
     }

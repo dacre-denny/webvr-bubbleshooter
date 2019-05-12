@@ -8,9 +8,10 @@ export const enum Colors {
 }
 
 export class Bubble {
+  static readonly RADIUS = 0.5;
+
   private mesh: BABYLON.InstancedMesh;
   private color: Colors;
-  private _id: string;
 
   public static fromImposter(imposter: BABYLON.PhysicsImpostor): Bubble {
     return (imposter.object as any).bubble as Bubble;
@@ -37,7 +38,6 @@ export class Bubble {
 
     this.mesh = mesh;
     this.color = color;
-    this._id = `${mesh.id}`;
   }
 
   public getColor() {

@@ -25,7 +25,7 @@ export class BubbleFactory {
 
       const mesh = BABYLON.MeshBuilder.CreateIcoSphere(
         `bubble.mesh.${key}`,
-        { radius: 0.5, subdivisions: 1 },
+        { radius: Bubble.RADIUS, subdivisions: 1 },
         scene
       );
 

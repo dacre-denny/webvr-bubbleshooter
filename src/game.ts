@@ -1,10 +1,9 @@
 import * as BABYLON from "babylonjs";
+import { Bubble } from "./bubble";
 import { BubbleFactory } from "./bubbleFactory";
-import { Bubble, Colors } from "./bubble";
-import { Level } from "./level";
 import { Launcher } from "./launcher";
+import { Level } from "./level";
 import { UI } from "./ui";
-import { randomColor } from "./utilities";
 
 const enum GameState {
   MENU,
@@ -91,19 +90,14 @@ export class Game {
     }
   }
 
-  private onBubbleLanded(colliderBubble: Bubble, otherBubble: Bubble) {
+  private onBubbleLanded(colliderBubble: Bubble) {
     const { level } = this;
     // Insert bubble into level
-    if (!level.insertBubble(colliderBubble)) {
-      this.bubbleBurstQueue.push(colliderBubble);
-      return;
-    }
-
-    /*
+    level.insertBubble(colliderBubble);
 
     const burstBubbles = level.getLocalBubblesOfColor(colliderBubble);
 
-    if (false && burstBubbles.length > 0) {
+    if (burstBubbles.length > 0) {
       // If bubbles to burst have been found, add to the burst queue
       this.bubbleBurstQueue.push(...burstBubbles);
     } else {
@@ -125,7 +119,8 @@ export class Game {
         }
       }
     }
-*/
+    /*
+     */
     this.bubbleShot = null;
   }
 
@@ -140,29 +135,25 @@ export class Game {
 
     const imposters = this.level.getBubbleImposters();
 
-    const handleCollide = (
-      collider: BABYLON.PhysicsImpostor,
-      other: BABYLON.PhysicsImpostor
-    ) => {
-      collider.unregisterOnPhysicsCollide(imposters, handleCollide);
+    const handleCollide = () => {
+      const imposter = this.bubbleShot.getImposter();
+      imposter.unregisterOnPhysicsCollide(imposters, handleCollide);
 
-      const colliderBubble = Bubble.fromImposter(collider);
-      const otherBubble = Bubble.fromImposter(other);
+      const colliderBubble = Bubble.fromImposter(imposter);
 
-      this.onBubbleLanded(colliderBubble, otherBubble);
+      this.onBubbleLanded(colliderBubble);
     };
 
     const direction = this.launcher.getDirection();
     const force = direction.scale(Game.SHOOT_POWER);
 
-    const bubble = this.gameNextBubble; //  this.bubbleFactory.createBubble();
+    const bubble = this.gameNextBubble;
     bubble.getMesh().position.x = 0;
 
     const imposter = bubble.getImposter();
 
     imposter.registerOnPhysicsCollide(imposters, handleCollide);
     imposter.setLinearVelocity(force);
-    //imposter.applyForce(force, BABYLON.Vector3.Zero());
 
     this.bubbleShot = bubble;
 
@@ -286,11 +277,11 @@ export class Game {
     } else {
       const camera = new BABYLON.UniversalCamera(
         "camera",
-        new BABYLON.Vector3(3, 0, 3),
+        new BABYLON.Vector3(7, 8, 7),
         this.scene
       );
       camera.fov = 1.1;
-      camera.setTarget(new BABYLON.Vector3(0, 1, 0));
+      camera.setTarget(new BABYLON.Vector3(0, 0, 0));
 
       camera.attachControl(this.canvas, false);
 
