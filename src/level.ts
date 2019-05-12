@@ -19,9 +19,6 @@ export class Level {
 
   constructor() {
     this.lattice = new Map();
-    //this.bubbleFactory = bubbleFactory;
-
-    //this.create(scene);
   }
 
   private dispose() {
@@ -128,8 +125,14 @@ export class Level {
     this.level = level;
   }
 
-  public getBubbles() {
-    return Array.from(this.lattice.values());
+  public getBubbles(): Bubble[] {
+    const bubbles: Bubble[] = [];
+    for (const value of this.lattice.values()) {
+      if (value) {
+        bubbles.push(value);
+      }
+    }
+    return bubbles;
   }
 
   public getBubbleImposters() {
@@ -191,21 +194,12 @@ export class Level {
         const coordDir = coords.add(dir);
         const coordBubble = this.getBubble(coordDir);
         if (coordBubble) {
-          this.removeBubble(coordDir);
           searchAround(coordBubble);
         }
       }
     };
 
     searchAround(bubble);
-    /*
-    for (const b of localWithColor.values()) {
-      const c = this.getCoords(b);
-      if (c) {
-        this.removeBubble(c);
-      }
-    }
-    */
 
     return Array.from(localWithColor.values());
   }
@@ -246,10 +240,6 @@ export class Level {
     }
   }
 
-  private removeBubble(coords: BABYLON.Vector3) {
-    return this.lattice.delete(`${coords.x},${coords.y},${coords.z}`);
-  }
-
   private getBubble(coords: BABYLON.Vector3) {
     return this.lattice.get(`${coords.x},${coords.y},${coords.z}`);
   }
@@ -281,24 +271,32 @@ export class Level {
     }
   }
 
+  public removeBubble(bubble: Bubble) {
+    for (const [key, value] of this.lattice.entries()) {
+      if (bubble === value) {
+        this.lattice.delete(key);
+      }
+    }
+  }
+
   public insertNextLayer(bubbleFactory: BubbleFactory) {
     // Step all layers
     for (let l = 0; l < LEVEL_LAYERS; l++) {
       for (let w = 0; w < LEVEL_WIDTH; w++) {
         for (let d = 0; d < LEVEL_DEPTH; d++) {
-          const coordThis = new BABYLON.Vector3(w, l, d);
-          const coordAbove = new BABYLON.Vector3(w, l + 1, d);
-          const bubbleAbove = this.getBubble(coordAbove);
-          const bubbleThis = this.getBubble(coordThis);
+          const coordDest = new BABYLON.Vector3(w, l, d);
+          const coordSrc = new BABYLON.Vector3(w, l + 1, d);
+          const bubbleSrc = this.getBubble(coordSrc);
+          const bubbleDest = this.getBubble(coordDest);
 
-          this.setBubble(coordThis, null);
+          this.setBubble(coordSrc, null);
 
-          if (bubbleAbove) {
-            this.setBubble(coordThis, bubbleAbove);
+          if (bubbleSrc) {
+            this.setBubble(coordDest, bubbleSrc);
           }
 
-          if (l === 0 && bubbleThis) {
-            bubbleThis.dispose();
+          if (l === 0 && bubbleDest) {
+            bubbleDest.dispose();
           }
         }
       }

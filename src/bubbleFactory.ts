@@ -1,5 +1,6 @@
 import * as BABYLON from "babylonjs";
 import { Bubble, Colors } from "./bubble";
+import { randomColor } from "./utilities";
 
 export class BubbleFactory {
   private bubbles: Map<Colors, BABYLON.Mesh>;
@@ -43,7 +44,7 @@ export class BubbleFactory {
   }
 
   public createBubble(): Bubble {
-    const color = Math.floor(Math.random() * 4) as Colors;
+    const color = randomColor();
     const mesh = this.bubbles.get(color);
 
     const instance = mesh.createInstance(`bubble.mesh.instance.${this.count}`);

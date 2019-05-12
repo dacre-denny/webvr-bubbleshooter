@@ -1,9 +1,10 @@
 import * as BABYLON from "babylonjs";
 import { BubbleFactory } from "./bubbleFactory";
-import { Bubble } from "./bubble";
+import { Bubble, Colors } from "./bubble";
 import { Level } from "./level";
 import { Launcher } from "./launcher";
 import { UI } from "./ui";
+import { randomColor } from "./utilities";
 
 const enum GameState {
   MENU,
@@ -23,6 +24,7 @@ export class Game {
 
   private gameState: GameState;
   private gameShotAttempts: number;
+  private gameNextColor: Colors;
 
   private launcher: Launcher;
   private level: Level;
@@ -47,6 +49,7 @@ export class Game {
       this.scene
     );
 
+    this.gameNextColor = randomColor();
     this.gameState = GameState.MENU;
     this.gameShotAttempts = Game.SHOT_ATTEMPTS;
 
@@ -62,8 +65,28 @@ export class Game {
   }
 
   private beforeFrame() {
+    this.ui.updatePlacement(
+      this.camera.position,
+      this.camera.getDirection(BABYLON.Vector3.Forward()),
+      5
+    );
+
+    if (this.bubbleShot) {
+      if (
+        BABYLON.Vector3.Distance(
+          this.bubbleShot.getMesh().position,
+          this.launcher.getPosition()
+        ) > 50
+      ) {
+        this.bubbleShot.dispose();
+        this.bubbleShot = null;
+      }
+    }
+
     if (this.bubbleBurstQueue.length > 0) {
       const bubble = this.bubbleBurstQueue.pop();
+
+      this.level.removeBubble(bubble);
 
       bubble.dispose();
     }
@@ -97,6 +120,8 @@ export class Game {
         }
       }
     }
+
+    this.bubbleShot = null;
   }
 
   public shootBubble() {
@@ -158,6 +183,8 @@ export class Game {
 
     this.ui.displayStartMenu(() => this.onStartGame());
     this.gameState = GameState.MENU;
+
+    this.onStartGame();
   }
 
   public onGameOver() {
@@ -180,22 +207,13 @@ export class Game {
 
   onReady() {
     this.launcher.create(this.scene);
-
-    setInterval(() => {
-      this.launcher.lookAt(null);
-    }, 10);
+    this.launcher.lookAt(new BABYLON.Vector3(0, 5, 0));
 
     this.level.create(this.scene);
 
     this.onMainMenu();
 
     this.scene.onBeforeRenderObservable.add(() => {
-      this.ui.updatePlacement(
-        this.camera.position,
-        this.camera.getDirection(BABYLON.Vector3.Forward()),
-        5
-      );
-
       this.beforeFrame();
     });
 
@@ -275,12 +293,14 @@ export class Game {
     });
 
     window.addEventListener("keyup", e => {
-      if (e.keyCode === 32) {
-        this.level.insertNextLayer(this.bubbleFactory);
-      } else {
-        if (this.gameState === GameState.PLAYING) {
-          this.shootBubble();
-        }
+      // if (e.keyCode === 32) {
+      //   this.level.insertNextLayer(this.bubbleFactory);
+      // } else {
+      //   if (this.gameState === GameState.PLAYING) {
+      //   }
+      // }
+      if (e.key === "a") {
+        this.shootBubble();
       }
     });
 
@@ -297,15 +317,6 @@ export class Game {
 
         this.launcher.lookAt(bubble.getMesh().position);
       }
-
-      // //   const x = event.x / document.body.clientWidth - 0.5;
-      // //   const y = event.y / document.body.clientHeight - 0.5;
-      // if (this.gameState === GameState.PLAYING) {
-      //   const dir = new BABYLON.Vector3(1, 0, 0);
-      //   this.launcher.setDirection(dir);
-      // }
     });
-    /*
-     */
   }
 }

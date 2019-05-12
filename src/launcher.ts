@@ -13,7 +13,7 @@ export class Launcher {
   public create(scene: BABYLON.Scene) {
     this.dispose();
 
-    var launcherTube = BABYLON.MeshBuilder.CreateCylinder(
+    var meshTube = BABYLON.MeshBuilder.CreateCylinder(
       "launcher.tube",
       {
         height: 2,
@@ -25,29 +25,30 @@ export class Launcher {
       scene
     ).convertToFlatShadedMesh();
 
-    // launcherTube.setPivotPoint(BABYLON)
-    launcherTube.translate(BABYLON.Vector3.Forward(), 1);
-    launcherTube.rotate(BABYLON.Vector3.Left(), Math.PI / 2);
+    meshTube.translate(BABYLON.Vector3.Forward(), 1);
+    meshTube.rotate(BABYLON.Vector3.Left(), Math.PI / 2);
 
-    let launcherBase = BABYLON.MeshBuilder.CreateIcoSphere(
+    let meshBase = BABYLON.MeshBuilder.CreateIcoSphere(
       "launcher.base",
 
       { radius: 1, subdivisions: 1 },
       scene
     );
 
-    const launcher = new BABYLON.Mesh("launcher");
+    const mesh = new BABYLON.Mesh("launcher");
 
-    launcher.addChild(launcherBase);
-    launcher.addChild(launcherTube);
+    mesh.addChild(meshBase);
+    mesh.addChild(meshTube);
 
-    this.mesh = launcher;
+    this.mesh = mesh;
   }
 
   public getDirection(): BABYLON.Vector3 {
-    return this.mesh.getDirection(new BABYLON.Vector3(0, 1, 0));
+    return this.mesh.getDirection(new BABYLON.Vector3(0, 0, 1));
   }
-
+  public getPosition(): BABYLON.Vector3 {
+    return this.mesh.position;
+  }
   public lookAt(position: BABYLON.Vector3) {
     this.mesh.lookAt(position);
   }
