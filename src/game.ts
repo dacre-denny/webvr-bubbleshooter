@@ -13,7 +13,7 @@ const enum GameState {
 }
 
 export class Game {
-  static readonly SHOOT_POWER = 600;
+  static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 3;
 
   private canvas: HTMLCanvasElement;
@@ -24,7 +24,7 @@ export class Game {
 
   private gameState: GameState;
   private gameShotAttempts: number;
-  private gameNextColor: Colors;
+  private gameNextBubble: Bubble;
 
   private launcher: Launcher;
   private level: Level;
@@ -49,17 +49,16 @@ export class Game {
       this.scene
     );
 
-    this.gameNextColor = randomColor();
+    this.bubbleFactory = new BubbleFactory(this.scene);
+    this.level = new Level();
+    this.launcher = new Launcher();
+    this.ui = new UI(this.scene);
+
     this.gameState = GameState.MENU;
     this.gameShotAttempts = Game.SHOT_ATTEMPTS;
 
     this.bubbleShot = null;
     this.bubbleBurstQueue = [];
-
-    this.bubbleFactory = new BubbleFactory(this.scene);
-    this.level = new Level();
-    this.launcher = new Launcher();
-    this.ui = new UI(this.scene);
 
     this.launch();
   }
@@ -95,10 +94,16 @@ export class Game {
   private onBubbleLanded(colliderBubble: Bubble, otherBubble: Bubble) {
     const { level } = this;
     // Insert bubble into level
-    level.insertBubble(colliderBubble, otherBubble);
+    if (!level.insertBubble(colliderBubble)) {
+      this.bubbleBurstQueue.push(colliderBubble);
+      return;
+    }
+
+    /*
+
     const burstBubbles = level.getLocalBubblesOfColor(colliderBubble);
 
-    if (burstBubbles.length > 0) {
+    if (false && burstBubbles.length > 0) {
       // If bubbles to burst have been found, add to the burst queue
       this.bubbleBurstQueue.push(...burstBubbles);
     } else {
@@ -120,7 +125,7 @@ export class Game {
         }
       }
     }
-
+*/
     this.bubbleShot = null;
   }
 
@@ -150,13 +155,24 @@ export class Game {
     const direction = this.launcher.getDirection();
     const force = direction.scale(Game.SHOOT_POWER);
 
-    const bubble = this.bubbleFactory.createBubble();
+    const bubble = this.gameNextBubble; //  this.bubbleFactory.createBubble();
+    bubble.getMesh().position.x = 0;
+
     const imposter = bubble.getImposter();
 
     imposter.registerOnPhysicsCollide(imposters, handleCollide);
-    imposter.applyForce(force, BABYLON.Vector3.Zero());
+    imposter.setLinearVelocity(force);
+    //imposter.applyForce(force, BABYLON.Vector3.Zero());
 
     this.bubbleShot = bubble;
+
+    this.gameNextBubble = this.getNextBubble();
+  }
+
+  private getNextBubble() {
+    const gameNextBubble = this.bubbleFactory.createBubble();
+    gameNextBubble.getMesh().position.x = 1.5;
+    return gameNextBubble;
   }
 
   public dispose() {
@@ -201,6 +217,7 @@ export class Game {
   public onStartGame() {
     this.dispose();
     this.ui.displayHud();
+    this.gameNextBubble = this.getNextBubble();
     this.gameState = GameState.PLAYING;
     this.level.insertNextLayer(this.bubbleFactory);
   }
@@ -293,9 +310,10 @@ export class Game {
     });
 
     window.addEventListener("keyup", e => {
-      // if (e.keyCode === 32) {
-      //   this.level.insertNextLayer(this.bubbleFactory);
-      // } else {
+      if (e.keyCode === 32) {
+        this.level.insertNextLayer(this.bubbleFactory);
+      }
+      // else {
       //   if (this.gameState === GameState.PLAYING) {
       //   }
       // }
