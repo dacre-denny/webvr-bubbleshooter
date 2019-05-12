@@ -59,25 +59,41 @@ export class Level {
         height: LEVEL_LAYERS,
         width: WALL_THICKNESS,
         depth: LEVEL_DEPTH * 2,
-        position: new BABYLON.Vector3(-LEVEL_WIDTH, 0, WALL_THICKNESS * 0.5)
+        position: new BABYLON.Vector3(
+          -LEVEL_WIDTH - xOffset,
+          0,
+          WALL_THICKNESS * 0.5 - zOffset
+        )
       },
       {
         height: LEVEL_LAYERS,
         width: LEVEL_DEPTH * 2,
         depth: WALL_THICKNESS,
-        position: new BABYLON.Vector3(-WALL_THICKNESS * 0.5, 0, -LEVEL_DEPTH)
+        position: new BABYLON.Vector3(
+          -WALL_THICKNESS * 0.5 - xOffset,
+          0,
+          -LEVEL_DEPTH - zOffset
+        )
       },
       {
         height: LEVEL_LAYERS,
         width: LEVEL_WIDTH * 2,
         depth: WALL_THICKNESS,
-        position: new BABYLON.Vector3(WALL_THICKNESS * 0.5, 0, LEVEL_DEPTH)
+        position: new BABYLON.Vector3(
+          WALL_THICKNESS * 0.5 - xOffset,
+          0,
+          LEVEL_DEPTH - zOffset
+        )
       },
       {
         height: LEVEL_LAYERS,
         width: WALL_THICKNESS,
         depth: LEVEL_DEPTH * 2,
-        position: new BABYLON.Vector3(LEVEL_WIDTH, 0, -WALL_THICKNESS * 0.5)
+        position: new BABYLON.Vector3(
+          LEVEL_WIDTH - xOffset,
+          0,
+          -WALL_THICKNESS * 0.5 - zOffset
+        )
       }
     ];
 
@@ -180,10 +196,10 @@ export class Level {
 
     const imposter = bubble.getImposter();
     imposter.setMass(0);
+
     position.x = x;
     position.y = y;
     position.z = z;
-    console.log(position);
 
     this.lattice.set(this.getKey(x, y, z), bubble);
     return true;
