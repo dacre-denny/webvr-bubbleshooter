@@ -1,91 +1,14 @@
 import * as BABYLON from "babylonjs";
-import * as GUI from "babylonjs-gui";
 import { BubbleFactory } from "./bubbleFactory";
 import { Bubble } from "./bubble";
 import { Level } from "./level";
 import { Launcher } from "./launcher";
+import { UI } from "./ui";
 
 const enum GameState {
   MENU,
   PLAYING,
   SCOREBOARD
-}
-
-class UI {
-  private gui: GUI.AdvancedDynamicTexture;
-  private plane: BABYLON.Mesh;
-
-  public release() {
-    if (this.gui) {
-      this.gui.dispose();
-      this.gui = null;
-    }
-
-    if (this.plane) {
-      this.plane = null;
-    }
-  }
-
-  public create(scene: BABYLON.Scene) {
-    this.release();
-
-    // var plane = BABYLON.Mesh.CreatePlane("plane", 1, scene);
-    const plane = BABYLON.MeshBuilder.CreatePlane(
-      "menu",
-      {
-        size: 5,
-        sourcePlane: new BABYLON.Plane(0, -1, 0, 0)
-      },
-      scene
-    );
-    plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
-    const gui = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 320, 320, true);
-
-    this.gui = gui;
-    this.plane = plane;
-  }
-  public foo() {
-    var panel = new GUI.StackPanel();
-    this.gui.addControl(panel);
-    {
-      var textGameOver = new GUI.TextBlock();
-      textGameOver.text = "Game over!";
-      textGameOver.height = "40px";
-      textGameOver.color = "white";
-      textGameOver.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textGameOver.fontSize = "40";
-      panel.addControl(textGameOver);
-    }
-    {
-      var textPlayerScore = new GUI.TextBlock();
-      textPlayerScore.text = "Your score:";
-      textPlayerScore.height = "20px";
-      textPlayerScore.color = "white";
-      textPlayerScore.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textPlayerScore.fontSize = "20";
-      panel.addControl(textPlayerScore);
-    }
-    {
-      var textPlayerScore = new GUI.TextBlock();
-      textPlayerScore.text = "9231";
-      textPlayerScore.height = "40px";
-      textPlayerScore.color = "white";
-      textPlayerScore.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textPlayerScore.fontSize = "40";
-      panel.addControl(textPlayerScore);
-    }
-
-    var buttonMenu = GUI.Button.CreateSimpleButton("menu", "Menu");
-    buttonMenu.width = 1;
-    buttonMenu.height = "40px";
-    buttonMenu.background = "green";
-    buttonMenu.onPointerClickObservable.add(() => {});
-
-    panel.addControl(buttonMenu);
-  }
 }
 
 export class Game {
@@ -96,6 +19,7 @@ export class Game {
   private engine: BABYLON.Engine;
   private scene: BABYLON.Scene;
   private camera: BABYLON.Camera;
+  private ui: UI;
 
   private gameState: GameState;
   private gameShotAttempts: number;
@@ -132,6 +56,7 @@ export class Game {
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
     this.launcher = new Launcher();
+    this.ui = new UI(this.scene);
 
     this.launch();
   }
@@ -144,7 +69,7 @@ export class Game {
     }
   }
 
-  public onBubbleLanded(colliderBubble: Bubble, otherBubble: Bubble) {
+  private onBubbleLanded(colliderBubble: Bubble, otherBubble: Bubble) {
     const { level } = this;
     // Insert bubble into level
     level.insertBubble(colliderBubble, otherBubble);
@@ -228,14 +153,27 @@ export class Game {
     this.launcher.create(this.scene);
   }
 
-  public restart() {
+  public onMainMenu() {
     this.dispose();
-    this.gameState = GameState.MENU;
 
+    this.ui.displayStartMenu(() => this.onStartGame());
+    this.gameState = GameState.MENU;
   }
 
-  public start() {
+  public onGameOver() {
+    this.ui.displayGameOverScreen();
+  }
+
+  public onQuitGame() {
     this.dispose();
+
+    this.ui.displayStartMenu(() => this.onStartGame());
+    this.gameState = GameState.MENU;
+  }
+
+  public onStartGame() {
+    this.dispose();
+    this.ui.displayHud();
     this.gameState = GameState.PLAYING;
     this.level.insertNextLayer(this.bubbleFactory);
   }
@@ -244,7 +182,15 @@ export class Game {
     this.launcher.create(this.scene);
     this.level.create(this.scene);
 
+    this.onMainMenu();
+
     this.scene.onBeforeRenderObservable.add(() => {
+      this.ui.updatePlacement(
+        this.camera.position,
+        this.camera.getDirection(BABYLON.Vector3.Forward()),
+        5
+      );
+
       this.beforeFrame();
     });
 
@@ -252,102 +198,6 @@ export class Game {
     this.engine.runRenderLoop(() => {
       this.scene.render();
     });
-  }
-
-  buildGameOverMenu(scene: BABYLON.Scene) {
-    // var plane = BABYLON.Mesh.CreatePlane("plane", 1, scene);
-    const plane = BABYLON.MeshBuilder.CreatePlane(
-      "menu",
-      {
-        size: 5,
-        sourcePlane: new BABYLON.Plane(0, -1, 0, 0)
-      },
-      scene
-    );
-    plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
-    var advancedTexture = GUI.AdvancedDynamicTexture.CreateForMesh(
-      plane,
-      320,
-      320,
-      true
-    );
-    advancedTexture.removeControl;
-    var panel = new GUI.StackPanel();
-    advancedTexture.addControl(panel);
-    {
-      var textGameOver = new GUI.TextBlock();
-      textGameOver.text = "Game over!";
-      textGameOver.height = "40px";
-      textGameOver.color = "white";
-      textGameOver.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textGameOver.fontSize = "40";
-      panel.addControl(textGameOver);
-    }
-    {
-      var textPlayerScore = new GUI.TextBlock();
-      textPlayerScore.text = "Your score:";
-      textPlayerScore.height = "20px";
-      textPlayerScore.color = "white";
-      textPlayerScore.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textPlayerScore.fontSize = "20";
-      panel.addControl(textPlayerScore);
-    }
-    {
-      var textPlayerScore = new GUI.TextBlock();
-      textPlayerScore.text = "9231";
-      textPlayerScore.height = "40px";
-      textPlayerScore.color = "white";
-      textPlayerScore.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textPlayerScore.fontSize = "40";
-      panel.addControl(textPlayerScore);
-    }
-
-    var buttonMenu = GUI.Button.CreateSimpleButton("menu", "Menu");
-    buttonMenu.width = 1;
-    buttonMenu.height = "40px";
-    buttonMenu.background = "green";
-    buttonMenu.onPointerClickObservable.add(() => {});
-
-    panel.addControl(buttonMenu);
-  }
-
-  buildStartMenu(scene: BABYLON.Scene) {
-    // var plane = BABYLON.Mesh.CreatePlane("plane", 1, scene);
-    const plane = BABYLON.MeshBuilder.CreatePlane(
-      "menu",
-      {
-        size: 5,
-        sourcePlane: new BABYLON.Plane(0, -1, 0, 0)
-      },
-      scene
-    );
-    plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
-    var advancedTexture = GUI.AdvancedDynamicTexture.CreateForMesh(
-      plane,
-      320,
-      320,
-      true
-    );
-    var panel = new GUI.StackPanel();
-    advancedTexture.addControl(panel);
-    var header = new GUI.TextBlock();
-    header.text = "BubblesVR";
-    header.height = "60px";
-    header.color = "white";
-    header.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    header.fontSize = "40";
-    panel.addControl(header);
-
-    var start = GUI.Button.CreateSimpleButton("start", "start");
-    start.width = 1;
-    start.height = "40px";
-    start.background = "green";
-    start.onPointerClickObservable.add(() => {});
-
-    panel.addControl(start);
   }
 
   launch(): void {
@@ -378,6 +228,7 @@ export class Game {
         trackPosition: true
       });
 
+      this.camera = vrHelper.webVRCamera;
       vrHelper.enableTeleportation({
         floorMeshes: [ground]
       });
@@ -395,7 +246,7 @@ export class Game {
     } else {
       const camera = new BABYLON.UniversalCamera(
         "camera",
-        new BABYLON.Vector3(3, -10, 3),
+        new BABYLON.Vector3(3, 0, 3),
         this.scene
       );
       camera.fov = 1.1;
@@ -406,15 +257,11 @@ export class Game {
       this.camera = camera;
     }
 
-    // this.buildStartMenu(this.scene);
-    this.buildGameOverMenu(this.scene);
-
     const physicsEngine = this.scene.getPhysicsEngine();
     physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
 
     this.scene.executeWhenReady(() => {
       this.onReady();
-      this.start();
     });
 
     // The canvas/window resize event handler.
