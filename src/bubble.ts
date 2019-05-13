@@ -17,6 +17,10 @@ export class Bubble {
     return (imposter.object as any).bubble as Bubble;
   }
 
+  public static isImposterBubble(imposter: BABYLON.PhysicsImpostor) {
+    return !!(imposter.object as any).bubble;
+  }
+
   public static fromAbstractMesh(mesh: BABYLON.AbstractMesh): Bubble {
     return (mesh as any).bubble as Bubble;
   }

@@ -134,7 +134,10 @@ export class Game {
 
     const imposters = this.level.getBubbleImposters();
 
-    const handleCollide = () => {
+    const handleCollide = (
+      collider: BABYLON.PhysicsImpostor,
+      other: BABYLON.PhysicsImpostor
+    ) => {
       const imposter = this.bubbleShot.getImposter();
       imposter.unregisterOnPhysicsCollide(imposters, handleCollide);
 
@@ -200,7 +203,6 @@ export class Game {
     this.dispose();
 
     this.ui.displayStartMenu(() => this.onStartGame());
-    // this.gameState = GameState.MENU;
 
     this.onStartGame();
   }
@@ -286,7 +288,7 @@ export class Game {
     } else {
       const camera = new BABYLON.UniversalCamera(
         "camera",
-        new BABYLON.Vector3(7, -4, 7),
+        new BABYLON.Vector3(7, -10, 7),
         this.scene
       );
       camera.fov = 1.1;
@@ -326,14 +328,19 @@ export class Game {
       const pickingInfo = this.scene.pick(
         event.clientX,
         event.clientY,
-        Bubble.isBubble,
+        (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
         false,
         this.camera
       );
       if (pickingInfo.pickedMesh) {
+        // console.log(pickingInfo.pickedPoint);
+
+        this.launcher.lookAt(pickingInfo.pickedPoint);
+        /*
         const bubble = Bubble.fromAbstractMesh(pickingInfo.pickedMesh);
 
         this.launcher.lookAt(bubble.getMesh().position);
+        */
       }
     });
   }

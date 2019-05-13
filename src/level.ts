@@ -14,9 +14,18 @@ const zOffset = 0.5;
 export class Level {
   private lattice: Map<string, Bubble>;
   private level: BABYLON.Mesh;
+  private top: BABYLON.Mesh;
 
   public static belowBaseline(bubble: Bubble): boolean {
     return bubble.getMesh().position.y <= 1;
+  }
+
+  public static isImposterTop(imposter: BABYLON.PhysicsImpostor) {
+    return (imposter.object as BABYLON.Mesh).name === `level.top`;
+  }
+
+  public static isWall(mesh: BABYLON.AbstractMesh): boolean {
+    return !!(mesh as any).wall;
   }
 
   constructor() {
@@ -115,10 +124,41 @@ export class Level {
 
       mesh.physicsImpostor = imposter;
       mesh.checkCollisions = true;
+      (mesh as any).wall = true;
 
       level.addChild(mesh);
     });
+    {
+      var mesh = BABYLON.MeshBuilder.CreateBox(
+        `level.top`,
+        {
+          width: WALL_THICKNESS + LEVEL_WIDTH * 2,
+          depth: WALL_THICKNESS + LEVEL_DEPTH * 2,
+          height: WALL_THICKNESS
+        },
+        scene
+      );
+      mesh.position.set(
+        -xOffset,
+        LEVEL_LAYERS + Bubble.RADIUS + WALL_THICKNESS * 0.5,
+        -zOffset
+      );
+      mesh.visibility = 0.5;
 
+      const imposter = new BABYLON.PhysicsImpostor(
+        mesh,
+        BABYLON.PhysicsImpostor.BoxImpostor,
+        { mass: 0, damping: 0, friction: 0, restitution: 0 },
+        scene
+      );
+
+      mesh.physicsImpostor = imposter;
+      mesh.checkCollisions = true;
+
+      (mesh as any).wall = true;
+
+      this.top = mesh;
+    }
     const impostor = new BABYLON.PhysicsImpostor(
       level,
       BABYLON.PhysicsImpostor.NoImpostor,
@@ -127,6 +167,8 @@ export class Level {
     );
     level.physicsImpostor = impostor;
     level.checkCollisions = true;
+
+    (level as any).wall = true;
 
     this.level = level;
   }
@@ -142,7 +184,7 @@ export class Level {
   }
 
   public getBubbleImposters() {
-    const imposters: BABYLON.PhysicsImpostor[] = [];
+    const imposters: BABYLON.PhysicsImpostor[] = [this.top.physicsImpostor]; //[this.top.physicsImpostor];
 
     for (const bubble of this.getBubbles()) {
       imposters.push(bubble.getImposter());
