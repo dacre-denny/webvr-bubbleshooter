@@ -151,53 +151,27 @@ export class Level {
     return imposters;
   }
 
-  public getLocalBubblesOfColor(bubble: Bubble) {
+  public getLocalBubblesOfColor(key: string) {
     const options = [
-      [-1, -1, -1],
-      [-1, -1, +0],
-      [-1, -1, +1],
-      [-1, +0, -1],
-      [-1, +0, +0],
-      [-1, +0, +1],
-      [-1, +1, -1],
-      [-1, +1, +0],
-      [-1, +1, +1],
-      [+0, -1, -1],
-      [+0, -1, +0],
-      [+0, -1, +1],
-      [+0, +0, -1],
-      [+0, +0, +0],
-      [+0, +0, +1],
-      [+0, +1, -1],
-      [+0, +1, +0],
-      [+0, +1, +1],
-      [+1, -1, -1],
-      [+1, -1, +0],
-      [+1, -1, +1],
-      [+1, +0, -1],
-      [+1, +0, +0],
-      [+1, +0, +1],
-      [+1, +1, -1],
-      [+1, +1, +0],
-      [+1, +1, +1]
+      [0, +1, 0],
+      [0, -1, 0],
+      [0, 0, +1],
+      [0, 0, -1],
+      [+1, 0, 0],
+      [-1, 0, 0]
     ];
 
-    let indicies: number[];
-
-    for (const [key, bub] of this.lattice) {
-      if (bub === bubble) {
-        indicies = this.getIndicies(key);
-        break;
-      }
-    }
+    let indicies = this.getIndicies(key);
+    const bubble = this.lattice.get(key);
 
     if (!indicies) {
       return;
     }
-
+    // console.log("indicies", indicies);
     const bubbles = new Set<Bubble>();
 
-    const iterate = ([x, y, z]: number[]) => {
+    const iterate = (x: number, y: number, z: number) => {
+      console.log("indicies", [x, y, z]);
       const key = this.getKey(x, y, z);
       const b = this.lattice.get(key);
 
@@ -213,13 +187,11 @@ export class Level {
         return;
       }
       bubbles.add(b);
-
       for (const [i, j, k] of options) {
-        iterate([i + x, j + y, k + z]);
+        iterate(i + x, j + y, k + z);
       }
     };
-
-    iterate(indicies);
+    iterate(indicies[0], indicies[1], indicies[2]);
 
     return Array.from(bubbles.values());
   }
@@ -240,6 +212,8 @@ export class Level {
     position.z = z;
 
     this.lattice.set(key, bubble);
+
+    return key;
   }
 
   private getKey(x: number, y: number, z: number) {
@@ -310,7 +284,7 @@ export class Level {
     // Insert new bubbles at top layer
     for (let x = -LEVEL_WIDTH; x < LEVEL_WIDTH; x++) {
       for (let z = -LEVEL_DEPTH; z < LEVEL_DEPTH; z++) {
-        const key = this.getKey(x, LEVEL_LAYERS - 1, z);
+        const key = this.getKey(x, LEVEL_LAYERS, z);
         const bubble = bubbleFactory.createBubble();
 
         bubble.getImposter().setMass(0);

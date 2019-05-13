@@ -93,9 +93,9 @@ export class Game {
   private onBubbleLanded(colliderBubble: Bubble) {
     const { level } = this;
     // Insert bubble into level
-    level.insertBubble(colliderBubble);
+    const key = level.insertBubble(colliderBubble);
 
-    const burstBubbles = level.getLocalBubblesOfColor(colliderBubble);
+    const burstBubbles = level.getLocalBubblesOfColor(key);
 
     if (burstBubbles.length > 0) {
       // If bubbles to burst have been found, add to the burst queue
@@ -119,8 +119,7 @@ export class Game {
         }
       }
     }
-    /*
-     */
+
     this.bubbleShot = null;
   }
 
