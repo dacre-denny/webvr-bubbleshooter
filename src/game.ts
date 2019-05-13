@@ -14,6 +14,7 @@ const enum GameState {
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 3;
+  static readonly SCORE = 15;
 
   private canvas: HTMLCanvasElement;
   private engine: BABYLON.Engine;
@@ -21,9 +22,9 @@ export class Game {
   private camera: BABYLON.Camera;
   private ui: UI;
 
-  private gameState: GameState;
   private gameShotAttempts: number;
   private gameNextBubble: Bubble;
+  private gameScore: number;
 
   private launcher: Launcher;
   private level: Level;
@@ -53,8 +54,8 @@ export class Game {
     this.launcher = new Launcher();
     this.ui = new UI(this.scene);
 
-    this.gameState = GameState.MENU;
     this.gameShotAttempts = Game.SHOT_ATTEMPTS;
+    this.gameScore = 0;
 
     this.bubbleShot = null;
     this.bubbleBurstQueue = [];
@@ -68,18 +69,6 @@ export class Game {
       this.camera.getDirection(BABYLON.Vector3.Forward()),
       5
     );
-
-    if (this.bubbleShot) {
-      if (
-        BABYLON.Vector3.Distance(
-          this.bubbleShot.getMesh().position,
-          this.launcher.getPosition()
-        ) > 50
-      ) {
-        this.bubbleShot.dispose();
-        this.bubbleShot = null;
-      }
-    }
 
     if (this.bubbleBurstQueue.length > 0) {
       const bubble = this.bubbleBurstQueue.pop();
@@ -96,6 +85,7 @@ export class Game {
     if (!bubbleShot) {
       return;
     }
+
     // Insert bubble into level
     const insertKey = level.insertBubble(bubbleShot);
     const burstBubbles = level.getLocalBubblesOfColor(insertKey);
@@ -105,6 +95,9 @@ export class Game {
       this.bubbleBurstQueue.push(...burstBubbles);
 
       // Reset shot attempts
+      this.gameScore += Game.SCORE;
+      this.ui.displayHud(this.gameScore, this.gameNextBubble);
+
       this.gameShotAttempts = Game.SHOT_ATTEMPTS;
     } else {
       // If not bubbles to burst, then decrement shot attempts
@@ -118,7 +111,6 @@ export class Game {
         if (this.level.getBubbles().some(Level.belowBaseline)) {
           // If any bubble exists below baseline, then game is over
           this.onGameOver();
-          return;
         } else {
           // If all bubbles above baseline, continue game and reset
           // shot count
@@ -127,7 +119,7 @@ export class Game {
       }
     }
 
-    this.level.insertNextLayer(this.bubbleFactory);
+    this.bubbleShot.getMesh().onAfterWorldMatrixUpdateObservable.clear();
     this.bubbleShot = null;
   }
 
@@ -155,12 +147,25 @@ export class Game {
     const force = direction.scale(Game.SHOOT_POWER);
 
     const bubble = this.gameNextBubble;
-    bubble.getMesh().position.x = 0;
+
+    bubble.getMesh().position.copyFrom(this.launcher.getPosition());
 
     const imposter = bubble.getImposter();
 
     imposter.registerOnPhysicsCollide(imposters, handleCollide);
     imposter.setLinearVelocity(force);
+
+    bubble.getMesh().onAfterWorldMatrixUpdateObservable.add(() => {
+      if (
+        BABYLON.Vector3.Distance(
+          this.bubbleShot.getMesh().position,
+          this.launcher.getPosition()
+        ) > 50
+      ) {
+        this.bubbleShot.dispose();
+        this.bubbleShot = null;
+      }
+    });
 
     this.bubbleShot = bubble;
 
@@ -182,7 +187,6 @@ export class Game {
       bubble.dispose();
     }
 
-    this.gameState = GameState.MENU;
     this.gameShotAttempts = Game.SHOT_ATTEMPTS;
 
     this.bubbleShot = null;
@@ -196,14 +200,12 @@ export class Game {
     this.dispose();
 
     this.ui.displayStartMenu(() => this.onStartGame());
-    this.gameState = GameState.MENU;
+    // this.gameState = GameState.MENU;
 
     this.onStartGame();
   }
 
   public onGameOver() {
-    this.gameState = GameState.GAMEOVER;
-
     this.ui.displayGameOverScreen();
   }
 
@@ -211,14 +213,12 @@ export class Game {
     this.dispose();
 
     this.ui.displayStartMenu(() => this.onStartGame());
-    this.gameState = GameState.MENU;
   }
 
   public onStartGame() {
     this.dispose();
-    this.ui.displayHud();
     this.gameNextBubble = this.getNextBubble();
-    this.gameState = GameState.PLAYING;
+    this.ui.displayHud(this.gameScore, this.gameNextBubble);
     this.level.insertNextLayer(this.bubbleFactory);
   }
 
@@ -314,7 +314,7 @@ export class Game {
         this.level.insertNextLayer(this.bubbleFactory);
       }
       // else {
-      //   if (this.gameState === GameState.PLAYING) {
+      //   if (// this.gameState === GameState.PLAYING) {
       //   }
       // }
       if (e.key === "a") {

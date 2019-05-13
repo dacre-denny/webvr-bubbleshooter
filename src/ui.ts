@@ -1,5 +1,6 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
+import { Bubble } from "./bubble";
 
 export class UI {
   private gui: GUI.AdvancedDynamicTexture;
@@ -134,7 +135,7 @@ export class UI {
     this.control = panel;
   }
 
-  public displayHud() {
+  public displayHud(score: number, nextBubble: Bubble) {
     this.releaseScreen();
 
     var panel = new GUI.StackPanel();

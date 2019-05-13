@@ -40,6 +40,8 @@ export class Launcher {
     mesh.addChild(meshBase);
     mesh.addChild(meshTube);
 
+    mesh.position.y -= 2;
+
     this.mesh = mesh;
   }
 
