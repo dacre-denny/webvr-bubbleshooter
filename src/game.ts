@@ -8,7 +8,7 @@ import { UI } from "./ui";
 const enum GameState {
   MENU,
   PLAYING,
-  SCOREBOARD
+  GAMEOVER
 }
 
 export class Game {
@@ -90,16 +90,22 @@ export class Game {
     }
   }
 
-  private onBubbleLanded(colliderBubble: Bubble) {
-    const { level } = this;
+  private onBubbleLanded() {
+    const { level, bubbleShot } = this;
+
+    if (!bubbleShot) {
+      return;
+    }
     // Insert bubble into level
-    const key = level.insertBubble(colliderBubble);
+    const insertKey = level.insertBubble(bubbleShot);
+    const burstBubbles = level.getLocalBubblesOfColor(insertKey);
 
-    const burstBubbles = level.getLocalBubblesOfColor(key);
-
-    if (burstBubbles.length > 0) {
+    if (burstBubbles.length > 1) {
       // If bubbles to burst have been found, add to the burst queue
       this.bubbleBurstQueue.push(...burstBubbles);
+
+      // Reset shot attempts
+      this.gameShotAttempts = Game.SHOT_ATTEMPTS;
     } else {
       // If not bubbles to burst, then decrement shot attempts
       this.gameShotAttempts--;
@@ -111,7 +117,8 @@ export class Game {
 
         if (this.level.getBubbles().some(Level.belowBaseline)) {
           // If any bubble exists below baseline, then game is over
-          this.gameState = GameState.SCOREBOARD;
+          this.onGameOver();
+          return;
         } else {
           // If all bubbles above baseline, continue game and reset
           // shot count
@@ -120,6 +127,7 @@ export class Game {
       }
     }
 
+    this.level.insertNextLayer(this.bubbleFactory);
     this.bubbleShot = null;
   }
 
@@ -138,9 +146,9 @@ export class Game {
       const imposter = this.bubbleShot.getImposter();
       imposter.unregisterOnPhysicsCollide(imposters, handleCollide);
 
-      const colliderBubble = Bubble.fromImposter(imposter);
-
-      this.onBubbleLanded(colliderBubble);
+      this.scene.onBeforeRenderObservable.addOnce(() => {
+        this.onBubbleLanded();
+      });
     };
 
     const direction = this.launcher.getDirection();
@@ -194,6 +202,8 @@ export class Game {
   }
 
   public onGameOver() {
+    this.gameState = GameState.GAMEOVER;
+
     this.ui.displayGameOverScreen();
   }
 
@@ -276,7 +286,7 @@ export class Game {
     } else {
       const camera = new BABYLON.UniversalCamera(
         "camera",
-        new BABYLON.Vector3(7, 8, 7),
+        new BABYLON.Vector3(7, -4, 7),
         this.scene
       );
       camera.fov = 1.1;

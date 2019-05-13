@@ -16,7 +16,7 @@ export class Level {
   private level: BABYLON.Mesh;
 
   public static belowBaseline(bubble: Bubble): boolean {
-    return bubble.getMesh().position.y <= 0;
+    return bubble.getMesh().position.y <= 1;
   }
 
   constructor() {
@@ -167,11 +167,10 @@ export class Level {
     if (!indicies) {
       return;
     }
-    // console.log("indicies", indicies);
+
     const bubbles = new Set<Bubble>();
 
     const iterate = (x: number, y: number, z: number) => {
-      console.log("indicies", [x, y, z]);
       const key = this.getKey(x, y, z);
       const b = this.lattice.get(key);
 
@@ -273,7 +272,7 @@ export class Level {
 
           const bubble = this.lattice.get(keySrc);
           if (bubble) {
-            place(bubble, x, y + 1, z);
+            place(bubble, x, y, z);
             this.lattice.set(keyDest, bubble);
           }
           this.lattice.set(keySrc, null);
