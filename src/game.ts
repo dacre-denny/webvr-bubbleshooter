@@ -246,45 +246,31 @@ export class Game {
     const VR_MODE = false;
 
     if (VR_MODE) {
-      const groundMaterial = new BABYLON.StandardMaterial(
-        `ground.material`,
-        this.scene
-      );
-      groundMaterial.diffuseColor = BABYLON.Color3.Gray();
-
-      const ground = BABYLON.MeshBuilder.CreatePlane("ground", {
-        size: 25,
-        sideOrientation: BABYLON.Mesh.DOUBLESIDE,
-        sourcePlane: new BABYLON.Plane(0, 1, 0, 1)
-      });
-      ground.material = groundMaterial;
-      ground.position.addInPlace(BABYLON.Vector3.Down());
-      // Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
-      this.camera = new BABYLON.FreeCamera(
-        "camera",
-        new BABYLON.Vector3(0, 0, 0),
-        this.scene
-      );
-      const vrHelper = this.scene.createDefaultVRExperience({
+      const VRHelper = this.scene.createDefaultVRExperience({
         createDeviceOrientationCamera: true,
         trackPosition: true
       });
+      VRHelper.enableInteractions();
 
-      this.camera = vrHelper.webVRCamera;
-      vrHelper.enableTeleportation({
-        floorMeshes: [ground]
+      const camera = VRHelper.webVRCamera;
+
+      VRHelper.enableInteractions();
+
+      camera.onAfterCheckInputsObservable.add(() => {
+        if (camera.controllers.length) {
+          const controller = camera.controllers[0];
+
+          this.uiManager.updatePlacement(
+            controller.position,
+            controller.getForwardRay().direction,
+            5
+          );
+        }
       });
 
-      vrHelper.enableInteractions();
+      // camera.initControllers()
 
-      vrHelper.raySelectionPredicate = (mesh: BABYLON.AbstractMesh) => {
-        console.log(mesh.name);
-
-        return false;
-      };
-
-      //vrHelper.enterVR();
-      vrHelper.onEnteringVR.add(() => {});
+      this.camera = camera;
     } else {
       const camera = new BABYLON.UniversalCamera(
         "camera",
@@ -296,16 +282,16 @@ export class Game {
 
       camera.attachControl(this.canvas, false);
 
+      camera.onAfterCheckInputsObservable.add(camera => {
+        this.uiManager.updatePlacement(
+          camera.position,
+          camera.getDirection(BABYLON.Vector3.Forward()),
+          5
+        );
+      });
+
       this.camera = camera;
     }
-
-    this.camera.onAfterCheckInputsObservable.add(camera => {
-      this.uiManager.updatePlacement(
-        camera.position,
-        camera.getDirection(BABYLON.Vector3.Forward()),
-        5
-      );
-    });
 
     const physicsEngine = this.scene.getPhysicsEngine();
     physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
