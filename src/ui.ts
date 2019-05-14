@@ -1,8 +1,10 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
-import { Bubble } from "./bubble";
+import { GameOver } from "./screens/gameover";
+import { MainMenu } from "./screens/menu";
+import { GameHUD } from "./screens/hud";
 
-export class UI {
+export class UIFactory {
   private gui: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
   private control: GUI.Container;
@@ -25,7 +27,7 @@ export class UI {
   }
 
   public release() {
-    this.releaseScreen();
+    this.clearScreen();
     if (this.gui) {
       this.gui.dispose();
       this.gui = null;
@@ -49,119 +51,48 @@ export class UI {
       scene
     );
     plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
-    const gui = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 320, 320, true);
+    const gui = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 640, 640, true);
 
     this.gui = gui;
     this.plane = plane;
   }
 
-  private releaseScreen() {
+  private clearScreen() {
     if (this.control) {
-      this.gui.removeControl(this.control);
-
       this.control.dispose();
       this.control = null;
     }
   }
 
-  public displayGameOverScreen() {
-    this.releaseScreen();
-    var panel = new GUI.StackPanel();
+  private setScreen<T extends GUI.StackPanel>(screen: T) {
+    this.clearScreen();
 
-    {
-      var textGameOver = new GUI.TextBlock();
-      textGameOver.text = "Game over!";
-      textGameOver.height = "40px";
-      textGameOver.color = "white";
-      textGameOver.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textGameOver.fontSize = "40";
-      panel.addControl(textGameOver);
-    }
-    {
-      var textPlayerScore = new GUI.TextBlock();
-      textPlayerScore.text = "Your score:";
-      textPlayerScore.height = "20px";
-      textPlayerScore.color = "white";
-      textPlayerScore.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textPlayerScore.fontSize = "20";
-      panel.addControl(textPlayerScore);
-    }
-    {
-      var textPlayerScore = new GUI.TextBlock();
-      textPlayerScore.text = "9231";
-      textPlayerScore.height = "40px";
-      textPlayerScore.color = "white";
-      textPlayerScore.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textPlayerScore.fontSize = "40";
-      panel.addControl(textPlayerScore);
-    }
-
-    var buttonMenu = GUI.Button.CreateSimpleButton("menu", "Menu");
-    buttonMenu.width = 1;
-    buttonMenu.height = "40px";
-    buttonMenu.background = "green";
-    buttonMenu.onPointerClickObservable.add(() => {});
-
-    panel.addControl(buttonMenu);
-
-    this.control = panel;
-    this.gui.addControl(panel);
+    this.control = screen;
+    this.gui.addControl(screen);
+    return screen;
   }
 
-  public displayStartMenu(onStart: () => void) {
-    this.releaseScreen();
+  public showGameOverScreen() {
+    if (this.control instanceof GameOver) {
+      return;
+    }
 
-    var panel = new GUI.StackPanel();
-    var header = new GUI.TextBlock();
-    header.text = "bub"; //"BubblesVR";
-    header.height = "60px";
-    header.color = "white";
-    header.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    header.fontSize = "40";
-    panel.addControl(header);
-
-    var start = GUI.Button.CreateSimpleButton("start", "start");
-    start.width = 1;
-    start.height = "40px";
-    start.background = "green";
-    start.onPointerClickObservable.add(onStart);
-
-    panel.addControl(start);
-
-    this.gui.addControl(panel);
-    this.control = panel;
+    return this.setScreen(new GameOver());
   }
 
-  public displayHud(score: number, nextBubble: Bubble) {
-    this.releaseScreen();
-
-    var panel = new GUI.StackPanel();
-
-    {
-      var textPlayerScore = new GUI.TextBlock();
-      textPlayerScore.text = "Score:";
-      textPlayerScore.height = "20px";
-      textPlayerScore.color = "white";
-      textPlayerScore.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textPlayerScore.fontSize = "20";
-      panel.addControl(textPlayerScore);
-    }
-    {
-      var textPlayerScore = new GUI.TextBlock();
-      textPlayerScore.text = "9231";
-      textPlayerScore.height = "20px";
-      textPlayerScore.color = "white";
-      textPlayerScore.textHorizontalAlignment =
-        GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-      textPlayerScore.fontSize = "20";
-      panel.addControl(textPlayerScore);
+  public showStartMenu() {
+    if (this.control instanceof MainMenu) {
+      return;
     }
 
-    this.gui.addControl(panel);
-    this.control = panel;
+    return this.setScreen(new MainMenu());
+  }
+
+  public showHUD() {
+    if (this.control instanceof GameHUD) {
+      return;
+    }
+
+    return this.setScreen(new GameHUD());
   }
 }

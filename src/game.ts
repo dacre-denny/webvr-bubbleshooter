@@ -3,18 +3,18 @@ import { Bubble } from "./bubble";
 import { BubbleFactory } from "./bubbleFactory";
 import { Launcher } from "./launcher";
 import { Level } from "./level";
-import { UI } from "./ui";
+import { UIFactory } from "./ui";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 3;
-  static readonly SCORE = 15;
+  static readonly SCORE_INCREMENT = 10;
 
   private canvas: HTMLCanvasElement;
   private engine: BABYLON.Engine;
   private scene: BABYLON.Scene;
   private camera: BABYLON.Camera;
-  private ui: UI;
+  private ui: UIFactory;
 
   private gameShotAttempts: number;
   private gameNextBubble: Bubble;
@@ -46,7 +46,7 @@ export class Game {
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
     this.launcher = new Launcher();
-    this.ui = new UI(this.scene);
+    this.ui = new UIFactory(this.scene);
 
     this.gameShotAttempts = Game.SHOT_ATTEMPTS;
     this.gameScore = 0;
@@ -58,13 +58,15 @@ export class Game {
   }
 
   private beforeFrame() {
-    this.ui.updatePlacement(
-      this.camera.position,
-      this.camera.getDirection(BABYLON.Vector3.Forward()),
-      5
-    );
-
     if (this.bubbleBurstQueue.length > 0) {
+      // Reset shot attempts
+      this.gameScore += Game.SCORE_INCREMENT;
+
+      // Update ingame hud
+      const hud = this.ui.showHUD();
+      hud.setScore(this.gameScore);
+      hud.setNextBubble(this.gameNextBubble);
+
       const bubble = this.bubbleBurstQueue.pop();
 
       this.level.removeBubble(bubble);
@@ -100,10 +102,6 @@ export class Game {
     if (burstBubbles.length > 1) {
       // If bubbles to burst have been found, add to the burst queue
       this.bubbleBurstQueue.push(...burstBubbles);
-
-      // Reset shot attempts
-      this.gameScore += Game.SCORE;
-      this.ui.displayHud(this.gameScore, this.gameNextBubble);
 
       this.gameShotAttempts = Game.SHOT_ATTEMPTS;
     } else {
@@ -200,26 +198,30 @@ export class Game {
   public onMainMenu() {
     this.dispose();
 
-    this.ui.displayStartMenu(() => this.onStartGame());
+    const menu = this.ui.showStartMenu();
+    menu.getStartButton().onPointerClickObservable.add(() => {
+      this.onStartGame();
+    });
 
-    this.onStartGame();
+    //    this.onStartGame();
   }
 
   public onGameOver() {
-    this.ui.displayGameOverScreen();
-  }
-
-  public onQuitGame() {
-    this.dispose();
-
-    this.ui.displayStartMenu(() => this.onStartGame());
+    const gameOver = this.ui.showGameOverScreen();
+    gameOver.getMenuButton().onPointerClickObservable.add(() => {
+      this.onMainMenu();
+    });
   }
 
   public onStartGame() {
     this.dispose();
+
     this.gameNextBubble = this.getNextBubble();
-    this.ui.displayHud(this.gameScore, this.gameNextBubble);
-    this.level.insertNextLayer(this.bubbleFactory);
+    this.incrementLevel();
+
+    const hud = this.ui.showHUD();
+    hud.setScore(this.gameScore);
+    hud.setNextBubble(this.gameNextBubble);
   }
 
   onReady() {
@@ -296,6 +298,14 @@ export class Game {
 
       this.camera = camera;
     }
+
+    this.camera.onAfterCheckInputsObservable.add(camera => {
+      this.ui.updatePlacement(
+        camera.position,
+        camera.getDirection(BABYLON.Vector3.Forward()),
+        5
+      );
+    });
 
     const physicsEngine = this.scene.getPhysicsEngine();
     physicsEngine.setGravity(new BABYLON.Vector3(0, 0, 0));
