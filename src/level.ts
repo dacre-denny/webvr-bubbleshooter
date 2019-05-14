@@ -296,10 +296,11 @@ export class Level {
     // Clear any bubbles at base layer
     for (let x = -LEVEL_WIDTH; x < LEVEL_WIDTH; x++) {
       for (let z = -LEVEL_DEPTH; z < LEVEL_DEPTH; z++) {
-        const key = this.getKey(x, 0, z);
+        const key = this.getKey(x, Level.BASELINE, z);
         const bubble = this.lattice.get(key);
 
         if (bubble) {
+          console.log(x);
           bubble.dispose();
           this.lattice.delete(key);
         }
@@ -307,7 +308,7 @@ export class Level {
     }
 
     // Increment all bubbles through inner layers
-    for (let y = 0; y < LEVEL_LAYERS; y++) {
+    for (let y = Level.BASELINE; y < LEVEL_LAYERS; y++) {
       for (let x = -LEVEL_WIDTH; x < LEVEL_WIDTH; x++) {
         for (let z = -LEVEL_DEPTH; z < LEVEL_DEPTH; z++) {
           const keySrc = this.getKey(x, y + 1, z);

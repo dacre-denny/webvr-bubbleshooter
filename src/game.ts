@@ -73,6 +73,19 @@ export class Game {
     }
   }
 
+  private incrementLevel() {
+    this.level.insertNextLayer(this.bubbleFactory);
+
+    if (this.level.getBubbles().some(Level.belowBaseline)) {
+      // If any bubble exists below baseline, then game is over
+      this.onGameOver();
+    } else {
+      // If all bubbles above baseline, continue game and reset
+      // shot count
+      this.gameShotAttempts = Game.SHOT_ATTEMPTS;
+    }
+  }
+
   private onBubbleLanded() {
     const { level, bubbleShot } = this;
 
@@ -100,16 +113,7 @@ export class Game {
       // If no shots remaining then add bubble layer to level and
       // reset shot attempts
       if (this.gameShotAttempts <= 0) {
-        this.level.insertNextLayer(this.bubbleFactory);
-
-        if (this.level.getBubbles().some(Level.belowBaseline)) {
-          // If any bubble exists below baseline, then game is over
-          this.onGameOver();
-        } else {
-          // If all bubbles above baseline, continue game and reset
-          // shot count
-          this.gameShotAttempts = Game.SHOT_ATTEMPTS;
-        }
+        this.incrementLevel();
       }
     }
 
@@ -307,7 +311,7 @@ export class Game {
 
     window.addEventListener("keyup", e => {
       if (e.keyCode === 32) {
-        this.level.insertNextLayer(this.bubbleFactory);
+        this.incrementLevel();
       }
       // else {
       //   if (// this.gameState === GameState.PLAYING) {
