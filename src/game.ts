@@ -335,7 +335,11 @@ export class Game {
       if (pickingInfo.pickedMesh) {
         // console.log(pickingInfo.pickedPoint);
 
-        this.launcher.lookAt(pickingInfo.pickedPoint);
+        const target = pickingInfo.pickedPoint.clone();
+
+        target.y = Math.max(target.y, Level.BASELINE);
+
+        this.launcher.lookAt(target);
         /*
         const bubble = Bubble.fromAbstractMesh(pickingInfo.pickedMesh);
 

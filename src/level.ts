@@ -12,12 +12,14 @@ const xOffset = 0.5;
 const zOffset = 0.5;
 
 export class Level {
+  static readonly BASELINE = 1;
+
   private lattice: Map<string, Bubble>;
   private level: BABYLON.Mesh;
   private top: BABYLON.Mesh;
 
   public static belowBaseline(bubble: Bubble): boolean {
-    return bubble.getMesh().position.y <= 1;
+    return bubble.getMesh().position.y <= Level.BASELINE;
   }
 
   public static isImposterTop(imposter: BABYLON.PhysicsImpostor) {
