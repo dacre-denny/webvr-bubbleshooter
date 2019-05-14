@@ -7,9 +7,8 @@ const LEVEL_WIDTH = 4;
 const LEVEL_DEPTH = 4;
 const LEVEL_LAYERS = 5;
 const WALL_THICKNESS = 0.1;
-
-const xOffset = 0.5;
-const zOffset = 0.5;
+const OFFSET_X = 0.5;
+const OFFSET_Z = 0.5;
 
 export class Level {
   static readonly BASELINE = 1;
@@ -69,9 +68,9 @@ export class Level {
         width: WALL_THICKNESS,
         depth: LEVEL_DEPTH * 2,
         position: new BABYLON.Vector3(
-          -LEVEL_WIDTH - xOffset,
+          -LEVEL_WIDTH - OFFSET_X,
           0,
-          WALL_THICKNESS * 0.5 - zOffset
+          WALL_THICKNESS * 0.5 - OFFSET_Z
         )
       },
       {
@@ -79,9 +78,9 @@ export class Level {
         width: LEVEL_DEPTH * 2,
         depth: WALL_THICKNESS,
         position: new BABYLON.Vector3(
-          -WALL_THICKNESS * 0.5 - xOffset,
+          -WALL_THICKNESS * 0.5 - OFFSET_X,
           0,
-          -LEVEL_DEPTH - zOffset
+          -LEVEL_DEPTH - OFFSET_Z
         )
       },
       {
@@ -89,9 +88,9 @@ export class Level {
         width: LEVEL_WIDTH * 2,
         depth: WALL_THICKNESS,
         position: new BABYLON.Vector3(
-          WALL_THICKNESS * 0.5 - xOffset,
+          WALL_THICKNESS * 0.5 - OFFSET_X,
           0,
-          LEVEL_DEPTH - zOffset
+          LEVEL_DEPTH - OFFSET_Z
         )
       },
       {
@@ -99,9 +98,9 @@ export class Level {
         width: WALL_THICKNESS,
         depth: LEVEL_DEPTH * 2,
         position: new BABYLON.Vector3(
-          LEVEL_WIDTH - xOffset,
+          LEVEL_WIDTH - OFFSET_X,
           0,
-          -WALL_THICKNESS * 0.5 - zOffset
+          -WALL_THICKNESS * 0.5 - OFFSET_Z
         )
       }
     ];
@@ -141,9 +140,9 @@ export class Level {
         scene
       );
       mesh.position.set(
-        -xOffset,
+        -OFFSET_X,
         LEVEL_LAYERS + Bubble.RADIUS + WALL_THICKNESS * 0.5,
-        -zOffset
+        -OFFSET_Z
       );
       mesh.visibility = 0.5;
 

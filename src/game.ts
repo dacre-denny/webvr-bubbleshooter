@@ -5,12 +5,6 @@ import { Launcher } from "./launcher";
 import { Level } from "./level";
 import { UI } from "./ui";
 
-const enum GameState {
-  MENU,
-  PLAYING,
-  GAMEOVER
-}
-
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 3;
@@ -332,19 +326,12 @@ export class Game {
         false,
         this.camera
       );
-      if (pickingInfo.pickedMesh) {
-        // console.log(pickingInfo.pickedPoint);
-
-        const target = pickingInfo.pickedPoint.clone();
+      if (pickingInfo.hit) {
+        const target = pickingInfo.pickedPoint;
 
         target.y = Math.max(target.y, Level.BASELINE);
 
         this.launcher.lookAt(target);
-        /*
-        const bubble = Bubble.fromAbstractMesh(pickingInfo.pickedMesh);
-
-        this.launcher.lookAt(bubble.getMesh().position);
-        */
       }
     });
   }
