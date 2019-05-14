@@ -4,42 +4,13 @@ import { GameOver } from "./screens/gameover";
 import { MainMenu } from "./screens/menu";
 import { GameHUD } from "./screens/hud";
 
-export class UIFactory {
-  private gui: GUI.AdvancedDynamicTexture;
-  private plane: BABYLON.Mesh;
-  private control: GUI.Container;
+export class UIManager {
+  private uiTexture: GUI.AdvancedDynamicTexture;
+  private uiSurface: BABYLON.Mesh;
+  private uiCurrentScreen: GUI.Container;
 
   constructor(scene: BABYLON.Scene) {
-    this.create(scene);
-  }
-
-  public updatePlacement(
-    origin: BABYLON.Vector3,
-    direction: BABYLON.Vector3,
-    offset: number
-  ) {
-    const position = new BABYLON.Vector3()
-      .addInPlace(origin)
-      .addInPlace(direction.scale(offset));
-
-    this.plane.setDirection(direction);
-    this.plane.position.copyFrom(position);
-  }
-
-  public release() {
-    this.clearScreen();
-    if (this.gui) {
-      this.gui.dispose();
-      this.gui = null;
-    }
-
-    if (this.plane) {
-      this.plane = null;
-    }
-  }
-
-  private create(scene: BABYLON.Scene) {
-    this.release();
+    this.dispose();
 
     // var plane = BABYLON.Mesh.CreatePlane("plane", 1, scene);
     const plane = BABYLON.MeshBuilder.CreatePlane(
@@ -53,46 +24,66 @@ export class UIFactory {
     plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
     const gui = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 640, 640, true);
 
-    this.gui = gui;
-    this.plane = plane;
+    this.uiTexture = gui;
+    this.uiSurface = plane;
+  }
+
+  public updatePlacement(
+    origin: BABYLON.Vector3,
+    direction: BABYLON.Vector3,
+    offset: number
+  ) {
+    const position = new BABYLON.Vector3()
+      .addInPlace(origin)
+      .addInPlace(direction.scale(offset));
+
+    this.uiSurface.setDirection(direction);
+    this.uiSurface.position.copyFrom(position);
   }
 
   private clearScreen() {
-    if (this.control) {
-      this.control.dispose();
-      this.control = null;
+    if (this.uiCurrentScreen) {
+      this.uiCurrentScreen.dispose();
+      this.uiCurrentScreen = null;
     }
   }
 
   private setScreen<T extends GUI.StackPanel>(screen: T) {
     this.clearScreen();
 
-    this.control = screen;
-    this.gui.addControl(screen);
+    this.uiCurrentScreen = screen;
+    this.uiTexture.addControl(screen);
     return screen;
   }
 
-  public showGameOverScreen() {
-    if (this.control instanceof GameOver) {
-      return;
+  public dispose() {
+    this.clearScreen();
+
+    if (this.uiTexture) {
+      this.uiTexture.dispose();
+      this.uiTexture = null;
     }
 
-    return this.setScreen(new GameOver());
+    if (this.uiSurface) {
+      this.uiSurface = null;
+    }
+  }
+
+  public showGameOverScreen() {
+    return this.uiCurrentScreen instanceof GameOver
+      ? this.uiCurrentScreen
+      : this.setScreen(new GameOver());
   }
 
   public showStartMenu() {
-    if (this.control instanceof MainMenu) {
-      return;
-    }
-
-    return this.setScreen(new MainMenu());
+    return this.uiCurrentScreen instanceof MainMenu
+      ? this.uiCurrentScreen
+      : this.setScreen(new MainMenu());
   }
 
   public showHUD() {
-    if (this.control instanceof GameHUD) {
-      return;
-    }
-
-    return this.setScreen(new GameHUD());
+    return this.uiCurrentScreen instanceof GameHUD
+      ? this.uiCurrentScreen
+      : this.setScreen(new GameHUD());
   }
 }

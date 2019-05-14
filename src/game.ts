@@ -3,7 +3,7 @@ import { Bubble } from "./bubble";
 import { BubbleFactory } from "./bubbleFactory";
 import { Launcher } from "./launcher";
 import { Level } from "./level";
-import { UIFactory } from "./ui";
+import { UIManager } from "./ui";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -14,7 +14,7 @@ export class Game {
   private engine: BABYLON.Engine;
   private scene: BABYLON.Scene;
   private camera: BABYLON.Camera;
-  private ui: UIFactory;
+  private uiManager: UIManager;
 
   private gameShotAttempts: number;
   private gameNextBubble: Bubble;
@@ -46,7 +46,7 @@ export class Game {
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
     this.launcher = new Launcher();
-    this.ui = new UIFactory(this.scene);
+    this.uiManager = new UIManager(this.scene);
 
     this.gameShotAttempts = Game.SHOT_ATTEMPTS;
     this.gameScore = 0;
@@ -63,7 +63,7 @@ export class Game {
       this.gameScore += Game.SCORE_INCREMENT;
 
       // Update ingame hud
-      const hud = this.ui.showHUD();
+      const hud = this.uiManager.showHUD();
       hud.setScore(this.gameScore);
       hud.setNextBubble(this.gameNextBubble);
 
@@ -198,7 +198,7 @@ export class Game {
   public onMainMenu() {
     this.dispose();
 
-    const menu = this.ui.showStartMenu();
+    const menu = this.uiManager.showStartMenu();
     menu.getStartButton().onPointerClickObservable.add(() => {
       this.onStartGame();
     });
@@ -207,7 +207,7 @@ export class Game {
   }
 
   public onGameOver() {
-    const gameOver = this.ui.showGameOverScreen();
+    const gameOver = this.uiManager.showGameOverScreen();
     gameOver.getMenuButton().onPointerClickObservable.add(() => {
       this.onMainMenu();
     });
@@ -219,7 +219,7 @@ export class Game {
     this.gameNextBubble = this.getNextBubble();
     this.incrementLevel();
 
-    const hud = this.ui.showHUD();
+    const hud = this.uiManager.showHUD();
     hud.setScore(this.gameScore);
     hud.setNextBubble(this.gameNextBubble);
   }
@@ -300,7 +300,7 @@ export class Game {
     }
 
     this.camera.onAfterCheckInputsObservable.add(camera => {
-      this.ui.updatePlacement(
+      this.uiManager.updatePlacement(
         camera.position,
         camera.getDirection(BABYLON.Vector3.Forward()),
         5
