@@ -43,6 +43,8 @@ export class Launcher {
     mesh.position.y -= 3;
 
     this.mesh = mesh;
+
+    return this;
   }
 
   public getDirection(): BABYLON.Vector3 {

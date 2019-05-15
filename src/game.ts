@@ -19,11 +19,11 @@ export class Game {
   private launcher: Launcher;
   private level: Level;
 
-  private gameShotAttempts: number;
-  private gameNextBubble: Bubble;
-  private gameScore: number;
+  private playerAttempts: number;
+  private playerScore: number;
 
   private bubbleFactory: BubbleFactory;
+  private bubbleNext: Bubble;
   private bubbleShot: Bubble;
   private bubbleBurstQueue: Array<Bubble>;
 
@@ -49,8 +49,8 @@ export class Game {
     this.launcher = new Launcher();
     this.uiManager = new UIManager(this.scene);
 
-    this.gameShotAttempts = Game.SHOT_ATTEMPTS;
-    this.gameScore = 0;
+    this.playerAttempts = Game.SHOT_ATTEMPTS;
+    this.playerScore = 0;
 
     this.bubbleShot = null;
     this.bubbleBurstQueue = [];
@@ -60,27 +60,12 @@ export class Game {
       this.engine.resize();
     });
 
-    this.scene.executeWhenReady(() => {
-      this.onReady();
+    // Start game loop
+    this.engine.runRenderLoop(() => {
+      this.scene.render();
     });
-  }
 
-  private beforeFrame() {
-    if (this.bubbleBurstQueue.length > 0) {
-      // Reset shot attempts
-      this.gameScore += Game.SCORE_INCREMENT;
-
-      // Update ingame hud
-      const hud = this.uiManager.showHUD();
-      hud.setScore(this.gameScore);
-      hud.setNextBubble(this.gameNextBubble);
-
-      const bubble = this.bubbleBurstQueue.pop();
-
-      this.level.removeBubble(bubble);
-
-      bubble.dispose();
-    }
+    this.onMainMenu();
   }
 
   private incrementLevel() {
@@ -92,7 +77,7 @@ export class Game {
     } else {
       // If all bubbles above baseline, continue game and reset
       // shot count
-      this.gameShotAttempts = Game.SHOT_ATTEMPTS;
+      this.playerAttempts = Game.SHOT_ATTEMPTS;
     }
   }
 
@@ -111,28 +96,29 @@ export class Game {
       // If bubbles to burst have been found, add to the burst queue
       this.bubbleBurstQueue.push(...burstBubbles);
 
-      this.gameShotAttempts = Game.SHOT_ATTEMPTS;
+      this.playerAttempts = Game.SHOT_ATTEMPTS;
     } else {
       // If not bubbles to burst, then decrement shot attempts
-      this.gameShotAttempts--;
+      this.playerAttempts--;
 
       // If no shots remaining then add bubble layer to level and
       // reset shot attempts
-      if (this.gameShotAttempts <= 0) {
+      if (this.playerAttempts <= 0) {
         this.incrementLevel();
       }
     }
 
-    this.bubbleShot.getMesh().onAfterWorldMatrixUpdateObservable.clear();
     this.bubbleShot = null;
   }
 
-  public shootBubble() {
-    if (this.bubbleShot) {
-      return;
-    }
+  private getNextBubble() {
+    const gameNextBubble = this.bubbleFactory.createBubble();
+    gameNextBubble.getMesh().position.x = 1.5;
+    return gameNextBubble;
+  }
 
-    if (this.bubbleBurstQueue.length > 0) {
+  onShootBubble = () => {
+    if (this.bubbleShot !== null || this.bubbleBurstQueue.length > 0) {
       return;
     }
 
@@ -142,6 +128,8 @@ export class Game {
       const imposter = this.bubbleShot.getImposter();
       imposter.unregisterOnPhysicsCollide(imposters, handleCollide);
 
+      this.bubbleShot.getMesh().onAfterWorldMatrixUpdateObservable.clear();
+
       this.scene.onBeforeRenderObservable.addOnce(() => {
         this.onBubbleLanded();
       });
@@ -150,7 +138,7 @@ export class Game {
     const direction = this.launcher.getDirection();
     const force = direction.scale(Game.SHOOT_POWER);
 
-    const bubble = this.gameNextBubble;
+    const bubble = this.bubbleNext;
 
     if (!bubble) {
       return;
@@ -168,7 +156,7 @@ export class Game {
         BABYLON.Vector3.Distance(
           this.bubbleShot.getMesh().position,
           this.launcher.getPosition()
-        ) > 50
+        ) > 20
       ) {
         this.bubbleShot.dispose();
         this.bubbleShot = null;
@@ -177,85 +165,115 @@ export class Game {
 
     this.bubbleShot = bubble;
 
-    this.gameNextBubble = this.getNextBubble();
-  }
+    this.bubbleNext = this.getNextBubble();
+  };
 
-  private getNextBubble() {
-    const gameNextBubble = this.bubbleFactory.createBubble();
-    gameNextBubble.getMesh().position.x = 1.5;
-    return gameNextBubble;
-  }
+  onMainMenu = () => {
+    this.onGameReset();
 
-  public dispose() {
+    this.uiManager
+      .showStartMenu()
+      .getStartButton()
+      .onPointerClickObservable.add(this.onGameStart);
+  };
+
+  onGameReset = () => {
     if (this.bubbleShot) {
       this.bubbleShot.dispose();
+      this.bubbleShot = null;
+    }
+
+    if (this.bubbleNext) {
+      this.bubbleNext.dispose();
+      this.bubbleNext = null;
     }
 
     for (const bubble of this.bubbleBurstQueue) {
       bubble.dispose();
     }
 
-    this.gameShotAttempts = Game.SHOT_ATTEMPTS;
+    this.playerAttempts = Game.SHOT_ATTEMPTS;
 
-    this.bubbleShot = null;
     this.bubbleBurstQueue = [];
 
     this.level.create(this.scene);
-    this.launcher.create(this.scene);
-  }
 
-  public onMainMenu() {
-    this.dispose();
+    this.launcher.create(this.scene).lookAt(new BABYLON.Vector3(0, 5, 0));
 
-    const menu = this.uiManager.showStartMenu();
-    menu.getStartButton().onPointerClickObservable.add(() => {
-      this.onStartGame();
-    });
+    if (this.VRHelper.webVRCamera.leftController) {
+      this.VRHelper.webVRCamera.leftController.onTriggerStateChangedObservable.clear();
+    } else {
+      window.removeEventListener("click", this.onShootBubble);
+    }
+  };
 
-    //    this.onStartGame();
-  }
+  onGameStart = () => {
+    this.scene.onBeforeRenderObservable.add(this.onGameFrame);
 
-  public onGameOver() {
-    const gameOver = this.uiManager.showGameOverScreen();
-    gameOver.getMenuButton().onPointerClickObservable.add(() => {
-      this.onMainMenu();
-    });
-  }
-
-  public onStartGame() {
-    this.dispose();
-
-    this.gameNextBubble = this.getNextBubble();
+    this.bubbleNext = this.getNextBubble();
     this.incrementLevel();
 
-    const hud = this.uiManager.showHUD();
-    hud.setScore(this.gameScore);
-    hud.setNextBubble(this.gameNextBubble);
+    this.uiManager
+      .showHUD()
+      .setScore(this.playerScore)
+      .setNextBubble(this.bubbleNext);
 
-    /*
-        window.addEventListener("click", e => {
-          this.shootBubble();
-        });
-        */
-  }
+    if (
+      window.navigator.activeVRDisplays &&
+      this.VRHelper.webVRCamera.leftController
+    ) {
+      this.VRHelper.webVRCamera.leftController.onTriggerStateChangedObservable.add(
+        eventData => {
+          if (eventData.value === 1) {
+            this.onShootBubble();
+          }
+        }
+      );
+    } else {
+      window.addEventListener("click", this.onShootBubble);
 
-  onReady() {
-    this.launcher.create(this.scene);
-    this.launcher.lookAt(new BABYLON.Vector3(0, 5, 0));
+      window.addEventListener("mousemove", (event: MouseEvent) => {
+        const pickingInfo = this.scene.pick(
+          event.clientX,
+          event.clientY,
+          (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
+          false,
+          this.VRHelper.currentVRCamera
+        );
+        if (pickingInfo.hit) {
+          const target = pickingInfo.pickedPoint;
 
-    this.level.create(this.scene);
+          target.y = Math.max(target.y, Level.BASELINE);
 
-    this.onMainMenu();
+          this.launcher.lookAt(target);
+        }
+      });
+    }
+  };
 
-    this.scene.onBeforeRenderObservable.add(() => {
-      this.beforeFrame();
-    });
+  onGameFrame = () => {
+    if (this.bubbleBurstQueue.length > 0) {
+      // Reset shot attempts
+      this.playerScore += Game.SCORE_INCREMENT;
 
-    // Run the render loop.
-    this.engine.runRenderLoop(() => {
-      this.scene.render();
-    });
-  }
+      // Update ingame hud
+      this.uiManager
+        .showHUD()
+        .setScore(this.playerScore)
+        .setNextBubble(this.bubbleNext);
+
+      const bubble = this.bubbleBurstQueue.pop();
+
+      this.level.removeBubble(bubble);
+
+      bubble.dispose();
+    }
+  };
+
+  onGameOver = () => {
+    const gameOver = this.uiManager.showGameOverScreen();
+    gameOver.getMenuButton().onPointerClickObservable.add(this.onMainMenu);
+  };
 
   setupVR(): void {
     const VRHelper = this.scene.createDefaultVRExperience({
@@ -276,7 +294,7 @@ export class Game {
           webVRCamera.leftController.onTriggerStateChangedObservable.add(
             eventData => {
               if (eventData.value === 1) {
-                this.shootBubble();
+                this.onShootBubble();
               }
             }
           );
@@ -309,16 +327,14 @@ export class Game {
         }
       });
     } else {
-      VRHelper.currentVRCamera.position.set(-3, 0, -3);
-      VRHelper.currentVRCamera.fov = 1.3;
+      VRHelper.currentVRCamera.position.set(0, -1.5, -15);
       VRHelper.currentVRCamera.onAfterCheckInputsObservable.add(() => {
-        
         this.uiManager.updatePlacement(
           VRHelper.position.add(VRHelper.currentVRCamera.position),
           VRHelper.currentVRCamera.getForwardRay().direction,
           5
         );
-      })
+      });
     }
 
     this.VRHelper = VRHelper;

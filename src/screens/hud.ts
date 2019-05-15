@@ -31,7 +31,10 @@ export class GameHUD extends GUI.StackPanel {
 
   public setScore(score: number) {
     this.score.text = `${score}`;
+    return this;
   }
 
-  public setNextBubble(bubble: Bubble) {}
+  public setNextBubble(bubble: Bubble) {
+    return this;
+  }
 }
