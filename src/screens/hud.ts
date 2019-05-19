@@ -7,22 +7,28 @@ export class GameHUD extends GUI.StackPanel {
   constructor() {
     super();
 
-    const scoreHeading = new GUI.TextBlock();
-    scoreHeading.text = "Score:";
-    scoreHeading.height = "20px";
-    scoreHeading.color = "white";
-    scoreHeading.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    scoreHeading.fontSize = "20";
-    this.addControl(scoreHeading);
+    var gameHUD = new GUI.Image("game-hud", "./images/game-hud.png");
+    gameHUD.widthInPixels = 457;
+    gameHUD.heightInPixels = 45;
 
     const scoreValue = new GUI.TextBlock();
     scoreValue.text = "";
-    scoreValue.height = "20px";
+    scoreValue.height = "30px";
+    scoreValue.fontWeight = "bold";
     scoreValue.color = "white";
     scoreValue.textHorizontalAlignment =
-      GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    scoreValue.fontSize = "20";
+      BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    scoreValue.widthInPixels = 250;
+    scoreValue.leftInPixels = 25;
+    scoreValue.horizontalAlignment =
+      BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    scoreValue.fontSize = "30";
+
+    this.widthInPixels = 457;
+    this.heightInPixels = 145;
+    this.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+
+    this.addControl(gameHUD);
     this.addControl(scoreValue);
 
     this.score = scoreValue;

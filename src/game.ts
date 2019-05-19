@@ -173,6 +173,8 @@ export class Game {
       .showStartMenu()
       .getStartButton()
       .onPointerClickObservable.add(this.onGameStart);
+
+    this.onGameStart();
   };
 
   onGameReset = () => {

@@ -6,13 +6,13 @@ export class MainMenu extends GUI.StackPanel {
   constructor() {
     super();
 
-    var menuTitle = new GUI.Image("menu-title", "./images/menu-title.png");
+    var menuTitle = new GUI.Image("game-title", "./images/game-title.png");
     menuTitle.widthInPixels = 500;
     menuTitle.heightInPixels = 134;
 
     var menuStart = GUI.Button.CreateImageOnlyButton(
       "menu-start",
-      "./images/menu-start.png"
+      "./images/button-start.png"
     );
     menuStart.thickness = 0;
     menuStart.widthInPixels = 220;
