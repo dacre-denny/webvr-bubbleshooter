@@ -1,4 +1,4 @@
-import { Colors } from "./bubble";
+import { Colors } from "./objects/bubble";
 import * as GUI from "babylonjs-gui";
 
 let n = 0;

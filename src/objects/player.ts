@@ -1,6 +1,6 @@
 import * as BABYLON from "babylonjs";
 
-export class Launcher {
+export class Player {
   mesh: BABYLON.Mesh;
 
   private dispose() {

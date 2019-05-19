@@ -1,11 +1,9 @@
 import * as BABYLON from "babylonjs";
-import { Bubble } from "./bubble";
+import { Bubble } from "./objects/bubble";
 import { BubbleFactory } from "./bubbleFactory";
-import { Launcher } from "./launcher";
-import { Level } from "./level";
+import { Player } from "./objects/player";
+import { Level } from "./objects/level";
 import { UIManager } from "./ui";
-
-// const VR_MODE = true;
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -16,7 +14,7 @@ export class Game {
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
   private uiManager: UIManager;
-  private launcher: Launcher;
+  private launcher: Player;
   private level: Level;
 
   private playerAttempts: number;
@@ -38,7 +36,7 @@ export class Game {
     this.setupVR();
 
     // Create light
-    new BABYLON.HemisphericLight(
+    const light = new BABYLON.HemisphericLight(
       "light",
       new BABYLON.Vector3(0, 1, 0),
       this.scene
@@ -46,7 +44,7 @@ export class Game {
 
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
-    this.launcher = new Launcher();
+    this.launcher = new Player();
     this.uiManager = new UIManager(this.scene);
 
     this.playerAttempts = Game.SHOT_ATTEMPTS;

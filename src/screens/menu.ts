@@ -1,4 +1,3 @@
-import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 
 export class MainMenu extends GUI.StackPanel {
@@ -7,23 +6,22 @@ export class MainMenu extends GUI.StackPanel {
   constructor() {
     super();
 
-    var header = new GUI.TextBlock();
-    header.text = "bub"; //"BubblesVR";
-    header.height = "60px";
-    header.color = "white";
-    header.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    header.fontSize = "40";
-    this.addControl(header);
+    var menuTitle = new GUI.Image("menu-title", "./images/menu-title.png");
+    menuTitle.widthInPixels = 500;
+    menuTitle.heightInPixels = 134;
 
-    var start = GUI.Button.CreateSimpleButton("start", "start");
-    start.width = 1;
-    start.height = "40px";
-    start.background = "green";
-    //start.onPointerClickObservable.add(onStart);
+    var menuStart = GUI.Button.CreateImageOnlyButton(
+      "menu-start",
+      "./images/menu-start.png"
+    );
+    menuStart.thickness = 0;
+    menuStart.widthInPixels = 220;
+    menuStart.heightInPixels = 220;
 
-    this.start = start;
+    this.addControl(menuTitle);
+    this.addControl(menuStart);
 
-    this.addControl(start);
+    this.start = menuStart;
   }
 
   public getStartButton() {

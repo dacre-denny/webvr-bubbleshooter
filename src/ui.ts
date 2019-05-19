@@ -12,7 +12,6 @@ export class UIManager {
   constructor(scene: BABYLON.Scene) {
     this.dispose();
 
-    // var plane = BABYLON.Mesh.CreatePlane("plane", 1, scene);
     const plane = BABYLON.MeshBuilder.CreatePlane(
       "menu",
       {
@@ -22,7 +21,7 @@ export class UIManager {
       scene
     );
     plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
-    const gui = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 640, 640, true);
+    const gui = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 800, 800, true);
 
     this.uiTexture = gui;
     this.uiSurface = plane;

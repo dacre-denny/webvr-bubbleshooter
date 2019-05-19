@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { Bubble, Colors } from "./bubble";
+import { Bubble, Colors } from "./objects/bubble";
 import { randomColor } from "./utilities";
 
 export class BubbleFactory {

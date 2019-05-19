@@ -1,7 +1,7 @@
 import * as BABYLON from "babylonjs";
 import { Bubble } from "./bubble";
-import { BubbleFactory } from "./bubbleFactory";
-import { clamp } from "./utilities";
+import { BubbleFactory } from "../bubbleFactory";
+import { clamp } from "../utilities";
 
 const LEVEL_WIDTH = 4;
 const LEVEL_DEPTH = 4;

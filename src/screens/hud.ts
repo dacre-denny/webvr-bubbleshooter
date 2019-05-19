@@ -1,6 +1,5 @@
-import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
-import { Bubble } from "../bubble";
+import { Bubble } from "../objects/bubble";
 
 export class GameHUD extends GUI.StackPanel {
   private score: GUI.TextBlock;
