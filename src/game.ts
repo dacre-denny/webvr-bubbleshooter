@@ -217,9 +217,17 @@ export class Game {
     this.uiManager
       .showStartMenu()
       .getStartButton()
-      .onPointerClickObservable.add(this.onGameStart);
+      .onPointerClickObservable.add(this.delay(1000, this.onGameStart));
 
-    this.onGameStart();
+    // this.onGameStart();
+  };
+
+  delay = (delay: number, action: () => void) => {
+    return () => {
+      new Promise(resolve => {
+        setTimeout(resolve, delay);
+      }).then(action);
+    };
   };
 
   onGameReset = () => {
@@ -299,9 +307,15 @@ export class Game {
 
       const bubble = this.bubbleBurstQueue.pop();
 
-      this.particles.emitter = bubble.getMesh().position;
-      this.particles.start();
-      this.particles.targetStopDuration = 0.125;
+      if (!this.particles.isStarted()) {
+        this.particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
+        this.particles.color2 = BABYLON.Color4.FromColor3(
+          BABYLON.Color3.Blue()
+        );
+        this.particles.emitter = bubble.getMesh().position;
+        this.particles.start();
+        this.particles.targetStopDuration = 0.125;
+      }
 
       this.level.removeBubble(bubble);
 

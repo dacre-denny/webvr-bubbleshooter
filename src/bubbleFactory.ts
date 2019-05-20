@@ -36,6 +36,7 @@ export class BubbleFactory {
     }
     sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
     sphere.material = material;
+    sphere.isVisible = false;
     return sphere;
   }
 
