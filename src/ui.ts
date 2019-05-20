@@ -3,6 +3,7 @@ import * as GUI from "babylonjs-gui";
 import { GameOver } from "./screens/gameover";
 import { MainMenu } from "./screens/menu";
 import { GameHUD } from "./screens/hud";
+import { BubbleFactory } from "./bubbleFactory";
 
 export class UIManager {
   private uiTexture: GUI.AdvancedDynamicTexture;
@@ -81,8 +82,24 @@ export class UIManager {
   }
 
   public showHUD() {
-    return this.uiCurrentScreen instanceof GameHUD
-      ? this.uiCurrentScreen
-      : this.setScreen(new GameHUD());
+    if (this.uiCurrentScreen instanceof GameHUD) {
+      return this.uiCurrentScreen;
+    } else {
+      const scene = this.uiSurface.getScene();
+      const factory = new BubbleFactory(scene);
+
+      const bubble = factory.createBubble();
+      const mesh = bubble.getMesh();
+
+      mesh.position.set(2.5, 0, 2.5);
+
+      this.uiSurface.addChild(mesh);
+
+      return this.setScreen(new GameHUD());
+    }
+
+    // return this.uiCurrentScreen instanceof GameHUD
+    //   ? this.uiCurrentScreen
+    //   : this.setScreen(new GameHUD());
   }
 }

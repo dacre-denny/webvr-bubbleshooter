@@ -6,9 +6,14 @@ import { clamp } from "../utilities";
 const LEVEL_WIDTH = 4;
 const LEVEL_DEPTH = 4;
 const LEVEL_LAYERS = 5;
-// const WALL_THICKNESS = 0.1;
 const OFFSET_X = 0.5;
 const OFFSET_Z = 0.5;
+
+interface Wall {
+  height: number;
+  width: number;
+  position: BABYLON.Vector3;
+}
 
 export class Level {
   static readonly BASELINE = 1;
@@ -49,17 +54,54 @@ export class Level {
     this.lattice.clear();
   }
 
-  public create(scene: BABYLON.Scene) {
-    this.dispose();
+  private createSphere(scene: BABYLON.Scene) {
+    var sphere = BABYLON.MeshBuilder.CreateSphere(
+      "sphere",
+      {
+        segments: 4,
+        diameter: 200,
+        updatable: true,
+        sideOrientation: BABYLON.Mesh.BACKSIDE
+      },
+      scene
+    );
+
+    //If no colors add colors to sphere
+    var colors = sphere.getVerticesData(BABYLON.VertexBuffer.ColorKind);
+    if (!colors) {
+      colors = [];
+
+      var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+
+      for (var p = 0; p < positions.length / 3; p++) {
+        const c = positions[p * 3 + 1] / 400 + 0.5;
+        const g = Math.sin(positions[p * 3 + 0]) * 0.5 + 0.5;
+        const b = Math.cos(positions[p * 3 + 2]) * 0.5 + 0.5;
+        const r = Math.cos(1.7 + positions[p * 3 + 2]) * 0.5 + 0.5;
+
+        colors.push(r, g, b, 1);
+      }
+    }
+
+    sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
 
     const material = new BABYLON.StandardMaterial("level.material", scene);
     material.diffuseColor = BABYLON.Color3.White();
+    material.disableLighting = true;
+    material.emissiveColor = BABYLON.Color3.White();
 
-    interface Wall {
-      height: number;
-      width: number;
-      position: BABYLON.Vector3;
-    }
+    sphere.material = material;
+  }
+
+  public create(scene: BABYLON.Scene) {
+    this.dispose();
+
+    this.createSphere(scene);
+
+    const material = new BABYLON.StandardMaterial("level.material", scene);
+    material.diffuseColor = BABYLON.Color3.White();
+    material.emissiveColor = BABYLON.Color3.White();
+    material.disableLighting = true;
 
     const walls: Wall[] = [
       {
@@ -132,6 +174,7 @@ export class Level {
         scene
       );
 
+      mesh.material = material;
       mesh.physicsImpostor = imposter;
       mesh.checkCollisions = true;
       (mesh as any).wall = true;
@@ -163,11 +206,13 @@ export class Level {
 
       mesh.physicsImpostor = imposter;
       mesh.checkCollisions = true;
+      mesh.material = material;
 
       (mesh as any).wall = true;
 
       this.top = mesh;
     }
+
     const impostor = new BABYLON.PhysicsImpostor(
       level,
       BABYLON.PhysicsImpostor.NoImpostor,

@@ -5,6 +5,8 @@ import { Player } from "./objects/player";
 import { Level } from "./objects/level";
 import { UIManager } from "./ui";
 
+function boom(scene: BABYLON.Scene, position: BABYLON.Vector3) {}
+
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 3;
@@ -13,6 +15,7 @@ export class Game {
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
+  private particles: BABYLON.ParticleSystem;
   private uiManager: UIManager;
   private launcher: Player;
   private level: Level;
@@ -21,7 +24,6 @@ export class Game {
   private playerScore: number;
 
   private bubbleFactory: BubbleFactory;
-  private bubbleNext: Bubble;
   private bubbleShot: Bubble;
   private bubbleBurstQueue: Array<Bubble>;
 
@@ -30,18 +32,21 @@ export class Game {
     this.engine = new BABYLON.Engine(canvas, false);
     this.scene = new BABYLON.Scene(this.engine);
 
+    boom(this.scene, new BABYLON.Vector3(0, 0, 0));
+
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
 
     this.setupVR();
 
     // Create light
-    const light = new BABYLON.HemisphericLight(
+    new BABYLON.HemisphericLight(
       "light",
       new BABYLON.Vector3(0, 1, 0),
       this.scene
     );
 
+    this.particles = this.createBubblePopPartciles(this.scene);
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
     this.launcher = new Player();
@@ -64,6 +69,52 @@ export class Game {
     });
 
     this.onMainMenu();
+  }
+
+  private createBubblePopPartciles(scene: BABYLON.Scene) {
+    const particles = new BABYLON.ParticleSystem("particles", 2000, scene);
+
+    //Texture of each particle
+    particles.particleTexture = new BABYLON.Texture(
+      "./images/particle-bubble-burst.png",
+      scene
+    );
+
+    // Where the particles come from
+    // particles.emitter = position;
+
+    particles.startDirectionFunction = (
+      a: any,
+      b: any,
+      particle: BABYLON.Particle
+    ) => {
+      particle.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+    };
+
+    particles.maxAngularSpeed = 25;
+    particles.minAngularSpeed = -25;
+
+    particles.maxInitialRotation = Math.PI * 2;
+    particles.minInitialRotation = 0;
+
+    particles.maxSize = 1;
+    particles.minSize = 0.1;
+    particles.gravity = new BABYLON.Vector3(0, -9.81, 0);
+
+    particles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+
+    particles.emitRate = 500;
+
+    //particles.start();
+
+    // setTimeout(() => {
+    //   particles.stop();
+    //   particles.dispose();
+    // }, 1000);
+    particles.minEmitPower = 15;
+    particles.maxEmitPower = 25;
+
+    return particles;
   }
 
   private incrementLevel() {
@@ -136,11 +187,7 @@ export class Game {
     const direction = this.launcher.getDirection();
     const force = direction.scale(Game.SHOOT_POWER);
 
-    const bubble = this.bubbleNext;
-
-    if (!bubble) {
-      return;
-    }
+    const bubble = this.getNextBubble();
 
     bubble.getMesh().position.copyFrom(this.launcher.getPosition());
 
@@ -162,8 +209,6 @@ export class Game {
     });
 
     this.bubbleShot = bubble;
-
-    this.bubbleNext = this.getNextBubble();
   };
 
   onMainMenu = () => {
@@ -181,11 +226,6 @@ export class Game {
     if (this.bubbleShot) {
       this.bubbleShot.dispose();
       this.bubbleShot = null;
-    }
-
-    if (this.bubbleNext) {
-      this.bubbleNext.dispose();
-      this.bubbleNext = null;
     }
 
     for (const bubble of this.bubbleBurstQueue) {
@@ -210,13 +250,10 @@ export class Game {
   onGameStart = () => {
     this.scene.onBeforeRenderObservable.add(this.onGameFrame);
 
-    this.bubbleNext = this.getNextBubble();
     this.incrementLevel();
 
-    this.uiManager
-      .showHUD()
-      .setScore(this.playerScore)
-      .setNextBubble(this.bubbleNext);
+    this.uiManager.showHUD().setScore(this.playerScore);
+    // .setNextBubble(this.bubbleNext);
 
     if (
       window.navigator.activeVRDisplays &&
@@ -257,12 +294,14 @@ export class Game {
       this.playerScore += Game.SCORE_INCREMENT;
 
       // Update ingame hud
-      this.uiManager
-        .showHUD()
-        .setScore(this.playerScore)
-        .setNextBubble(this.bubbleNext);
+      this.uiManager.showHUD().setScore(this.playerScore);
+      //   .setNextBubble(this.bubbleNext);
 
       const bubble = this.bubbleBurstQueue.pop();
+
+      this.particles.emitter = bubble.getMesh().position;
+      this.particles.start();
+      this.particles.targetStopDuration = 0.125;
 
       this.level.removeBubble(bubble);
 
