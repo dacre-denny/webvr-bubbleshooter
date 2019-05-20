@@ -6,7 +6,7 @@ import { clamp } from "../utilities";
 const LEVEL_WIDTH = 4;
 const LEVEL_DEPTH = 4;
 const LEVEL_LAYERS = 5;
-const WALL_THICKNESS = 0.1;
+// const WALL_THICKNESS = 0.1;
 const OFFSET_X = 0.5;
 const OFFSET_Z = 0.5;
 
@@ -58,49 +58,44 @@ export class Level {
     interface Wall {
       height: number;
       width: number;
-      depth: number;
       position: BABYLON.Vector3;
     }
 
     const walls: Wall[] = [
       {
         height: LEVEL_LAYERS,
-        width: WALL_THICKNESS,
-        depth: LEVEL_DEPTH * 2,
+        width: LEVEL_DEPTH * 2,
         position: new BABYLON.Vector3(
-          -LEVEL_WIDTH - OFFSET_X,
-          0,
-          WALL_THICKNESS * 0.5 - OFFSET_Z
+          -LEVEL_WIDTH,
+          LEVEL_LAYERS * 0.5 + Bubble.RADIUS,
+          0
         )
       },
       {
         height: LEVEL_LAYERS,
         width: LEVEL_DEPTH * 2,
-        depth: WALL_THICKNESS,
         position: new BABYLON.Vector3(
-          -WALL_THICKNESS * 0.5 - OFFSET_X,
           0,
-          -LEVEL_DEPTH - OFFSET_Z
+          LEVEL_LAYERS * 0.5 + Bubble.RADIUS,
+          -LEVEL_DEPTH
         )
       },
       {
         height: LEVEL_LAYERS,
         width: LEVEL_WIDTH * 2,
-        depth: WALL_THICKNESS,
         position: new BABYLON.Vector3(
-          WALL_THICKNESS * 0.5 - OFFSET_X,
           0,
-          LEVEL_DEPTH - OFFSET_Z
+          LEVEL_LAYERS * 0.5 + Bubble.RADIUS,
+          LEVEL_DEPTH
         )
       },
       {
         height: LEVEL_LAYERS,
-        width: WALL_THICKNESS,
-        depth: LEVEL_DEPTH * 2,
+        width: LEVEL_WIDTH * 2,
         position: new BABYLON.Vector3(
-          LEVEL_WIDTH - OFFSET_X,
-          0,
-          -WALL_THICKNESS * 0.5 - OFFSET_Z
+          LEVEL_WIDTH,
+          LEVEL_LAYERS * 0.5 + Bubble.RADIUS,
+          0
         )
       }
     ];
@@ -108,11 +103,25 @@ export class Level {
     const level = new BABYLON.Mesh("level", scene);
 
     walls.forEach((wall, index) => {
-      var mesh = BABYLON.MeshBuilder.CreateBox(`level.${index}`, wall, scene);
+      const direction = new BABYLON.Vector3(
+        -wall.position.x,
+        0,
+        -wall.position.z
+      ).normalize();
+
+      var mesh = BABYLON.MeshBuilder.CreatePlane(`plane.${index}`, {
+        sourcePlane: BABYLON.Plane.FromPositionAndNormal(
+          BABYLON.Vector3.Zero(),
+          direction
+        ),
+        width: wall.width,
+        height: wall.height
+      });
+      // BABYLON.MeshBuilder.CreateBox(`level.${index}`, wall, scene);
       mesh.position.set(
-        wall.position.x,
-        Bubble.RADIUS + LEVEL_LAYERS * 0.5,
-        wall.position.z
+        wall.position.x - OFFSET_X,
+        wall.position.y,
+        wall.position.z - OFFSET_Z
       );
       mesh.visibility = 0.5;
 
@@ -130,20 +139,19 @@ export class Level {
       level.addChild(mesh);
     });
     {
-      var mesh = BABYLON.MeshBuilder.CreateBox(
+      var mesh = BABYLON.MeshBuilder.CreatePlane(
         `level.top`,
         {
-          width: WALL_THICKNESS + LEVEL_WIDTH * 2,
-          depth: WALL_THICKNESS + LEVEL_DEPTH * 2,
-          height: WALL_THICKNESS
+          sourcePlane: BABYLON.Plane.FromPositionAndNormal(
+            BABYLON.Vector3.Zero(),
+            BABYLON.Vector3.Down()
+          ),
+          width: LEVEL_DEPTH * 2,
+          height: LEVEL_WIDTH * 2
         },
         scene
       );
-      mesh.position.set(
-        -OFFSET_X,
-        LEVEL_LAYERS + Bubble.RADIUS + WALL_THICKNESS * 0.5,
-        -OFFSET_Z
-      );
+      mesh.position.set(-OFFSET_X, LEVEL_LAYERS + Bubble.RADIUS, -OFFSET_Z);
       mesh.visibility = 0.5;
 
       const imposter = new BABYLON.PhysicsImpostor(
