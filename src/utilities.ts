@@ -29,3 +29,7 @@ export function createTextBlock(
   element.top = top;
   return element;
 }
+
+export function hasVirtualDisplays() {
+  return window.navigator.activeVRDisplays;
+}

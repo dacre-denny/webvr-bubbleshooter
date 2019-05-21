@@ -82,6 +82,7 @@ export class UIManager {
   }
 
   public showHUD() {
+    /*
     if (this.uiCurrentScreen instanceof GameHUD) {
       return this.uiCurrentScreen;
     } else {
@@ -97,9 +98,10 @@ export class UIManager {
 
       return this.setScreen(new GameHUD());
     }
+    */
 
-    // return this.uiCurrentScreen instanceof GameHUD
-    //   ? this.uiCurrentScreen
-    //   : this.setScreen(new GameHUD());
+    return this.uiCurrentScreen instanceof GameHUD
+      ? this.uiCurrentScreen
+      : this.setScreen(new GameHUD());
   }
 }

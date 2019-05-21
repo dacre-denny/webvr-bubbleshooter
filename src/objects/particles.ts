@@ -1,8 +1,12 @@
 import * as BABYLON from "babylonjs";
+import { Bubble } from "./bubble";
 
 export class Particles {
-  public static createBubblePopPartciles(scene: BABYLON.Scene) {
-    const particles = new BABYLON.ParticleSystem("particles", 2000, scene);
+  public static createBubblePopPartciles(
+    scene: BABYLON.Scene,
+    position: BABYLON.Vector3
+  ) {
+    const particles = new BABYLON.ParticleSystem("particles", 20, scene);
 
     particles.particleTexture = new BABYLON.Texture(
       "./images/particle-bubble-burst.png",
@@ -32,9 +36,21 @@ export class Particles {
     particles.emitRate = 500;
     particles.minEmitPower = 15;
     particles.maxEmitPower = 20;
+    particles.emitter = position;
 
     particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
     particles.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
+
+    const onRender = () => {
+      if (!particles.isStarted()) {
+        if (!particles.isAlive()) {
+          particles.dispose();
+          scene.onBeforeRenderObservable.remove(observer);
+        }
+      }
+    };
+
+    const observer = scene.onBeforeRenderObservable.add(onRender);
 
     return particles;
   }
@@ -99,6 +115,16 @@ export class Particles {
     particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
     particles.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
 
+    const onRender = () => {
+      if (!particles.isStarted()) {
+        if (!particles.isAlive()) {
+          particles.dispose();
+          scene.onBeforeRenderObservable.remove(observer);
+        }
+      }
+    };
+
+    const observer = scene.onBeforeRenderObservable.add(onRender);
     return particles;
   }
 }

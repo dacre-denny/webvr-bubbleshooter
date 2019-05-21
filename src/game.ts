@@ -5,12 +5,46 @@ import { Player } from "./objects/player";
 import { Level } from "./objects/level";
 import { UIManager } from "./ui";
 import { Particles } from "./objects/particles";
+import { hasVirtualDisplays } from "./utilities";
 
 const enum GameState {
   GAME_MENU = "GAME_MENU",
   GAME_PLAYING = "GAME_PLAYING",
   GAME_BUSY = "GAME_BUSY",
   GAME_OVER = "GAME_OVER"
+}
+
+class BubbleQueue {
+  bubbles: Bubble[] = [];
+  timer: number;
+
+  private iterate() {
+    setTimeout(() => {
+      const bubble = this.bubbles.pop();
+
+      if (bubble) {
+        Bubble.burst(bubble);
+      }
+
+      if (this.bubbles.length) {
+        this.iterate();
+      } else {
+        this.timer = undefined;
+      }
+    }, 500);
+  }
+
+  public add(bubble: Bubble) {
+    this.bubbles.push(bubble);
+
+    if (this.timer === undefined) {
+      this.iterate();
+    }
+  }
+
+  public isEmpty() {
+    return this.bubbles.length === 0;
+  }
 }
 
 export class Game {
@@ -21,9 +55,10 @@ export class Game {
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
-  private bubbleParticles: BABYLON.ParticleSystem;
+  private queue: BubbleQueue;
+  // private bubbleParticles: BABYLON.ParticleSystem;
   private uiManager: UIManager;
-  private launcher: Player;
+  private player: Player;
   private level: Level;
   private state: GameState;
 
@@ -31,8 +66,7 @@ export class Game {
   private playerScore: number;
 
   private bubbleFactory: BubbleFactory;
-  private bubbleShot: Bubble;
-  private bubbleBurstQueue: Array<Bubble>;
+  // private bubbleBurstQueue: Array<Bubble>;
 
   constructor(canvasElement: string) {
     const canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -42,19 +76,21 @@ export class Game {
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
 
-    this.bubbleParticles = Particles.createBubblePopPartciles(this.scene);
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
-    this.launcher = new Player();
+    this.player = new Player();
     this.uiManager = new UIManager(this.scene);
+    this.queue = new BubbleQueue();
 
     this.playerAttempts = Game.SHOT_ATTEMPTS;
     this.playerScore = 0;
 
-    this.bubbleShot = null;
-    this.bubbleBurstQueue = [];
+    //this.bubbleBurstQueue = [];
 
     this.configVirtualDisplay();
+
+    this.level.create(this.scene);
+    this.player.create(this.scene);
 
     // The canvas/window resize event handler.
     window.addEventListener("resize", () => {
@@ -62,11 +98,13 @@ export class Game {
     });
 
     this.engine.runRenderLoop(() => {
-      // this.setState(GameState.GAME_MENU);
-      this.setState(GameState.GAME_OVER);
-
       this.scene.render();
     });
+
+    // this.setState(GameState.GAME_OVER);
+    // this.setState(GameState.GAME_MENU);
+    this.setState(GameState.GAME_PLAYING);
+    this.onGameFrame = this.onGameFrame.bind(this);
   }
 
   private delay(delay: number, action: () => void) {
@@ -103,129 +141,71 @@ export class Game {
     this.state = state;
   }
 
-  private onAddBubbleLayer() {
-    if (this.level.getBubbles().some(Level.belowBaseline)) {
-      this.onGameOver();
-    } else {
-      this.level.insertNextLayer(this.bubbleFactory);
-      this.playerAttempts = Game.SHOT_ATTEMPTS;
-    }
-  }
-
-  private onBubbleLanded() {
-    if (this.bubbleShot === null) {
-      return;
-    }
-
-    // Insert bubble into level
-    const insertKey = this.level.insertBubble(this.bubbleShot);
-    const burstBubbles = this.level.getLocalBubblesOfColor(insertKey);
-
-    if (burstBubbles.length > 1) {
-      // If bubbles to burst have been found, add to the burst queue
-      this.bubbleBurstQueue.push(...burstBubbles);
-
-      this.playerAttempts = Game.SHOT_ATTEMPTS;
-    } else {
-      // If not bubbles to burst, then decrement shot attempts
-      this.playerAttempts--;
-
-      // If no shots remaining then add bubble layer to level and
-      // reset shot attempts
-      if (this.playerAttempts <= 0) {
-        this.onAddBubbleLayer();
-      }
-    }
-
-    this.bubbleShot = null;
-  }
-
-  private onShootBubble() {
-    if (
-      this.state !== GameState.GAME_PLAYING ||
-      this.bubbleShot !== null ||
-      this.bubbleBurstQueue.length > 0
-    ) {
-      return;
-    }
-
-    const bubbleShot = this.bubbleFactory.createBubble();
-    const bubbleMesh = bubbleShot.getMesh();
-
-    this.level.registerCollision(bubbleShot, () => {
-      this.scene.onBeforeRenderObservable.addOnce(() => {
-        this.onBubbleLanded();
-      });
-    });
-
-    bubbleMesh.position.copyFrom(this.launcher.getPosition());
-
-    const bubbleImposter = bubbleShot.getImposter();
-
-    bubbleImposter.setLinearVelocity(
-      this.launcher.getDirection().scale(Game.SHOOT_POWER)
-    );
-
-    this.bubbleShot = bubbleShot;
-  }
-
   private onMainMenu() {
-    this.onGameReset();
+    const confetti = Particles.createConfetti(
+      this.scene,
+      new BABYLON.Vector3(0, 15, 0)
+    );
+    confetti.start();
+
+    this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
     this.uiManager
       .showStartMenu()
       .getStartButton()
-      .onPointerClickObservable.addOnce(this.delay(1000, this.onGamePlaying));
-  }
-
-  private onGameReset() {
-    if (this.bubbleShot) {
-      this.bubbleShot.dispose();
-      this.bubbleShot = null;
-    }
-
-    for (const bubble of this.bubbleBurstQueue) {
-      bubble.dispose();
-    }
-
-    this.playerAttempts = Game.SHOT_ATTEMPTS;
-
-    this.bubbleBurstQueue = [];
-
-    this.level.create(this.scene);
-
-    this.launcher.create(this.scene).lookAt(new BABYLON.Vector3(0, 5, 0));
-
-    if (this.VRHelper.webVRCamera.leftController) {
-      this.VRHelper.webVRCamera.leftController.onTriggerStateChangedObservable.clear();
-    } else {
-      window.removeEventListener("click", this.onShootBubble);
-    }
+      .onPointerClickObservable.addOnce(() => {
+        confetti.stop();
+        this.setState(GameState.GAME_PLAYING);
+      });
   }
 
   private onGamePlaying() {
-    this.scene.onBeforeRenderObservable.add(this.onGameFrame);
+    this.playerScore = 0;
+    this.playerAttempts = Game.SHOT_ATTEMPTS;
 
-    this.onAddBubbleLayer();
-
+    this.level.insertBubbleLayer(this.bubbleFactory);
     this.uiManager.showHUD().setScore(this.playerScore);
-    // .setNextBubble(this.bubbleNext);
 
-    if (
-      window.navigator.activeVRDisplays &&
-      this.VRHelper.webVRCamera.leftController
-    ) {
-      this.VRHelper.webVRCamera.leftController.onTriggerStateChangedObservable.add(
-        eventData => {
-          if (eventData.value === 1) {
-            this.onShootBubble();
+    let shotBubble: Bubble = null;
+    const VRHelper = this.VRHelper;
+    const webVRCamera = VRHelper.webVRCamera;
+
+    const canShootBubble = () => {
+      if (shotBubble !== null) {
+        return false;
+      }
+      if (!this.queue.isEmpty()) {
+        return false;
+      }
+      return true;
+    };
+
+    const onUpdatePlayer = (event?: MouseEvent) => {
+      if (hasVirtualDisplays()) {
+        if (webVRCamera.leftController) {
+          const leftController = webVRCamera.leftController;
+
+          this.uiManager.updatePlacement(
+            VRHelper.position.add(leftController.position),
+            leftController.getForwardRay().direction,
+            5
+          );
+
+          const pickingInfo = this.scene.pickWithRay(
+            leftController.getForwardRay(),
+            (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
+            false
+          );
+
+          if (pickingInfo.hit) {
+            const target = pickingInfo.pickedPoint;
+
+            target.y = Math.max(target.y, Level.BASELINE);
+
+            this.player.lookAt(target);
           }
         }
-      );
-    } else {
-      window.addEventListener("click", this.onShootBubble);
-
-      window.addEventListener("mousemove", (event: MouseEvent) => {
+      } else {
         const pickingInfo = this.scene.pick(
           event.clientX,
           event.clientY,
@@ -238,54 +218,163 @@ export class Game {
 
           target.y = Math.max(target.y, Level.BASELINE);
 
-          this.launcher.lookAt(target);
+          this.player.lookAt(target);
         }
-      });
+      }
+    };
+
+    const onDestroyBubble = (bubble: Bubble) => {
+      if (shotBubble === bubble) {
+        shotBubble = null;
+      }
+
+      bubble.getMesh().onAfterWorldMatrixUpdateObservable.clear();
+      bubble.dispose();
+    };
+
+    const onUpdateBubble = (bubble: Bubble) => {
+      if (
+        BABYLON.Vector3.Distance(
+          bubble.getPosition(),
+          this.player.getPosition()
+        ) > 20
+      ) {
+        onDestroyBubble(bubble);
+      }
+    };
+
+    const onShootBubble = () => {
+      if (canShootBubble()) {
+        const bubble = this.bubbleFactory.createBubble();
+        bubble.setPosition(this.player.getPosition());
+        bubble.setVelocity(this.player.getDirection().scale(Game.SHOOT_POWER));
+
+        bubble.getMesh().onAfterWorldMatrixUpdateObservable.add(() => {
+          onUpdateBubble(bubble);
+        });
+
+        this.level.registerCollision(bubble, () =>
+          this.scene.onBeforeRenderObservable.addOnce(() => {
+            onStoppedBubble(bubble);
+            shotBubble = null;
+          })
+        );
+
+        shotBubble = bubble;
+      }
+    };
+
+    const onStoppedBubble = (bubble: Bubble) => {
+      // Insert bubble into level
+      const insertKey = this.level.insertBubble(bubble);
+      const burstBubbles = this.level.getLocalBubblesOfColor(insertKey);
+
+      if (burstBubbles.length <= 1) {
+        // If not bubbles to burst, then decrement shot attempts
+        this.playerAttempts--;
+
+        // If no shots remaining then add bubble layer to level and
+        // reset shot attempts
+        if (this.playerAttempts <= 0) {
+          this.level.insertBubbleLayer(this.bubbleFactory);
+          this.playerAttempts = Game.SHOT_ATTEMPTS;
+        }
+      } else {
+        // If bubbles to burst have been found, add to the burst queue
+        for (const burstBubble of burstBubbles) {
+          this.queue.add(burstBubble);
+        }
+        this.playerAttempts = Game.SHOT_ATTEMPTS;
+      }
+
+      if (this.level.getBubbles().some(Level.belowBaseline)) {
+        // Game over condition reached
+        this.setState(GameState.GAME_OVER);
+
+        // Clean up event binding
+        if (hasVirtualDisplays()) {
+          const camera = this.VRHelper.webVRCamera;
+          camera.onAfterCheckInputsObservable.clear();
+          if (camera.leftController) {
+            camera.leftController.onTriggerStateChangedObservable.clear();
+          }
+        } else {
+          window.removeEventListener("click", onShootBubble);
+          window.removeEventListener("mousemove", onUpdatePlayer);
+        }
+      }
+    };
+
+    if (hasVirtualDisplays()) {
+      const onControllerUpdate = () => {
+        if (webVRCamera.leftController) {
+          const leftController = webVRCamera.leftController;
+          const onTrigger = leftController.onTriggerStateChangedObservable;
+
+          if (!onTrigger.hasObservers()) {
+            onTrigger.add(eventData => {
+              if (eventData.value === 1) {
+                onShootBubble();
+              }
+            });
+          }
+
+          onUpdatePlayer();
+        } else {
+          this.uiManager.updatePlacement(
+            this.VRHelper.position.add(webVRCamera.position),
+            webVRCamera.getForwardRay().direction,
+            5
+          );
+        }
+      };
+
+      webVRCamera.onAfterCheckInputsObservable.add(onControllerUpdate);
+    } else {
+      window.addEventListener("click", onShootBubble);
+      window.addEventListener("mousemove", onUpdatePlayer);
     }
   }
 
   private onGameFrame() {
-    if (
-      this.bubbleShot !== null &&
-      BABYLON.Vector3.Distance(
-        this.bubbleShot.getMesh().position,
-        this.launcher.getPosition()
-      ) > 20
-    ) {
-      this.bubbleShot.dispose();
-      this.bubbleShot = null;
-    }
-
-    if (this.bubbleBurstQueue.length > 0) {
-      // Reset shot attempts
-      this.playerScore += Game.SCORE_INCREMENT;
-
-      // Update ingame hud
-      this.uiManager.showHUD().setScore(this.playerScore);
-      //   .setNextBubble(this.bubbleNext);
-
-      const bubble = this.bubbleBurstQueue.pop();
-
-      /*
-      if (!this.particles.isStarted()) {
-        this.particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
-        this.particles.color2 = BABYLON.Color4.FromColor3(
-          BABYLON.Color3.Blue()
-        );
-        this.particles.emitter = bubble.getMesh().position;
-        this.particles.start();
-        this.particles.targetStopDuration = 0.125;
+    /*
+    if (this.bubbleShot !== null) {
+      if (
+        BABYLON.Vector3.Distance(
+          this.bubbleShot.getMesh().position,
+          this.player.getPosition()
+        ) > 20
+      ) {
+        this.bubbleShot.dispose();
+        this.bubbleShot = null;
       }
-      */
-
-      this.level.removeBubble(bubble);
-
-      bubble.dispose();
     }
+// */
+    //     if (this.bubbleBurstQueue.length > 0) {
+    //       // Reset shot attempts
+    //       this.playerScore += Game.SCORE_INCREMENT;
+    //       // Update ingame hud
+    //       this.uiManager.showHUD().setScore(this.playerScore);
+    //       //   .setNextBubble(this.bubbleNext);
+    //       const bubble = this.bubbleBurstQueue.pop();
+    //       /*
+    //       if (!this.particles.isStarted()) {
+    //         this.particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
+    //         this.particles.color2 = BABYLON.Color4.FromColor3(
+    //           BABYLON.Color3.Blue()
+    //         );
+    //         this.particles.emitter = bubble.getMesh().position;
+    //         this.particles.start();
+    //         this.particles.targetStopDuration = 0.125;
+    //       }
+    //       */
+    //       this.level.removeBubble(bubble);
+    //       bubble.dispose();
+    //     }
   }
 
   private onGameOver() {
-    this.onGameReset();
+    this.VRHelper.webVRCamera.onAfterCheckInputsObservable.clear();
 
     const particles = Particles.createConfetti(
       this.scene,
@@ -314,7 +403,7 @@ export class Game {
       VRHelper.onAfterEnteringVRObservable.add(() => {
         VRHelper.position.set(3, -3, 3);
       });
-
+      /*
       webVRCamera.onAfterCheckInputsObservable.add(() => {
         if (webVRCamera.controllers.length) {
           webVRCamera.leftController.onTriggerStateChangedObservable.add(
@@ -342,7 +431,7 @@ export class Game {
 
             target.y = Math.max(target.y, Level.BASELINE);
 
-            this.launcher.lookAt(target);
+            this.player.lookAt(target);
           }
         } else {
           this.uiManager.updatePlacement(
@@ -352,6 +441,7 @@ export class Game {
           );
         }
       });
+      */
     } else {
       VRHelper.currentVRCamera.position.set(0, -1.5, -15);
       VRHelper.currentVRCamera.onAfterCheckInputsObservable.add(() => {
