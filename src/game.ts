@@ -5,7 +5,110 @@ import { Player } from "./objects/player";
 import { Level } from "./objects/level";
 import { UIManager } from "./ui";
 
-function boom(scene: BABYLON.Scene, position: BABYLON.Vector3) {}
+const enum GameState {
+  GAME_MENU = "GAME_MENU",
+  GAME_PLAYING = "GAME_PLAYING",
+  GAME_BUSY = "GAME_BUSY",
+  GAME_OVER = "GAME_OVER"
+}
+
+function createConfetti(scene: BABYLON.Scene, position: BABYLON.Vector3) {
+  const particles = new BABYLON.ParticleSystem(
+    "particles-confetti",
+    100,
+    scene
+  );
+
+  particles.particleTexture = new BABYLON.Texture(
+    "./images/particle-confetti.png",
+    scene
+  );
+
+  particles.startPositionFunction = (
+    a: any,
+    b: any,
+    particle: BABYLON.Particle
+  ) => {
+    particle.position
+      .copyFrom(position)
+      .addInPlace(
+        new BABYLON.Vector3(
+          10 * (Math.random() - 0.5),
+          0,
+          10 * (Math.random() - 0.5)
+        )
+      );
+  };
+  particles.startDirectionFunction = (
+    a: any,
+    b: any,
+    particle: BABYLON.Particle
+  ) => {
+    particle.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+  };
+
+  particles.maxAngularSpeed = 15;
+  particles.minAngularSpeed = -15;
+
+  particles.maxInitialRotation = Math.PI * 2;
+  particles.minInitialRotation = 0;
+
+  particles.maxSize = 1;
+  particles.minSize = 0.5;
+  particles.gravity = new BABYLON.Vector3(0, -5.81, 0);
+
+  particles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+
+  particles.emitRate = 25;
+  particles.emitter = BABYLON.Vector3.Zero();
+  particles.minEmitPower = 5;
+  particles.maxEmitPower = 10;
+  particles.minLifeTime = 3.5;
+  particles.maxLifeTime = 5;
+
+  particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
+  particles.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
+
+  return particles;
+}
+
+function createBubblePopPartciles(scene: BABYLON.Scene) {
+  const particles = new BABYLON.ParticleSystem("particles", 2000, scene);
+
+  particles.particleTexture = new BABYLON.Texture(
+    "./images/particle-bubble-burst.png",
+    scene
+  );
+
+  particles.startDirectionFunction = (
+    a: any,
+    b: any,
+    particle: BABYLON.Particle
+  ) => {
+    particle.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+  };
+
+  particles.maxAngularSpeed = 25;
+  particles.minAngularSpeed = -25;
+
+  particles.maxInitialRotation = Math.PI * 2;
+  particles.minInitialRotation = 0;
+
+  particles.maxSize = 1;
+  particles.minSize = 0.5;
+  particles.gravity = new BABYLON.Vector3(0, -9.81, 0);
+
+  particles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+
+  particles.emitRate = 500;
+  particles.minEmitPower = 15;
+  particles.maxEmitPower = 20;
+
+  particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
+  particles.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
+
+  return particles;
+}
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -15,10 +118,11 @@ export class Game {
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
-  private particles: BABYLON.ParticleSystem;
+  private bubbleParticles: BABYLON.ParticleSystem;
   private uiManager: UIManager;
   private launcher: Player;
   private level: Level;
+  private state: GameState;
 
   private playerAttempts: number;
   private playerScore: number;
@@ -32,21 +136,10 @@ export class Game {
     this.engine = new BABYLON.Engine(canvas, false);
     this.scene = new BABYLON.Scene(this.engine);
 
-    boom(this.scene, new BABYLON.Vector3(0, 0, 0));
-
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
 
-    this.setupVR();
-
-    // Create light
-    new BABYLON.HemisphericLight(
-      "light",
-      new BABYLON.Vector3(0, 1, 0),
-      this.scene
-    );
-
-    this.particles = this.createBubblePopPartciles(this.scene);
+    this.bubbleParticles = createBubblePopPartciles(this.scene);
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
     this.launcher = new Player();
@@ -58,88 +151,72 @@ export class Game {
     this.bubbleShot = null;
     this.bubbleBurstQueue = [];
 
+    this.configVirtualDisplay();
+
     // The canvas/window resize event handler.
     window.addEventListener("resize", () => {
       this.engine.resize();
     });
 
-    // Start game loop
     this.engine.runRenderLoop(() => {
+      // this.setState(GameState.GAME_MENU);
+      this.setState(GameState.GAME_OVER);
+
       this.scene.render();
     });
-
-    this.onMainMenu();
   }
 
-  private createBubblePopPartciles(scene: BABYLON.Scene) {
-    const particles = new BABYLON.ParticleSystem("particles", 2000, scene);
-
-    //Texture of each particle
-    particles.particleTexture = new BABYLON.Texture(
-      "./images/particle-bubble-burst.png",
-      scene
-    );
-
-    // Where the particles come from
-    // particles.emitter = position;
-
-    particles.startDirectionFunction = (
-      a: any,
-      b: any,
-      particle: BABYLON.Particle
-    ) => {
-      particle.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+  private delay(delay: number, action: () => void) {
+    return () => {
+      new Promise(resolve => {
+        setTimeout(resolve, delay);
+      }).then(action);
     };
-
-    particles.maxAngularSpeed = 25;
-    particles.minAngularSpeed = -25;
-
-    particles.maxInitialRotation = Math.PI * 2;
-    particles.minInitialRotation = 0;
-
-    particles.maxSize = 1;
-    particles.minSize = 0.1;
-    particles.gravity = new BABYLON.Vector3(0, -9.81, 0);
-
-    particles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
-
-    particles.emitRate = 500;
-
-    //particles.start();
-
-    // setTimeout(() => {
-    //   particles.stop();
-    //   particles.dispose();
-    // }, 1000);
-    particles.minEmitPower = 15;
-    particles.maxEmitPower = 25;
-
-    return particles;
   }
 
-  private incrementLevel() {
-    this.level.insertNextLayer(this.bubbleFactory);
+  private setState(state: GameState) {
+    if (state === this.state) {
+      return;
+    }
 
+    switch (state) {
+      case GameState.GAME_MENU: {
+        this.onMainMenu();
+        break;
+      }
+      case GameState.GAME_OVER: {
+        this.onGameOver();
+        break;
+      }
+      case GameState.GAME_BUSY: {
+        break;
+      }
+      case GameState.GAME_PLAYING: {
+        this.onGamePlaying();
+        break;
+      }
+    }
+
+    this.state = state;
+  }
+
+  private onAddBubbleLayer() {
     if (this.level.getBubbles().some(Level.belowBaseline)) {
-      // If any bubble exists below baseline, then game is over
       this.onGameOver();
     } else {
-      // If all bubbles above baseline, continue game and reset
-      // shot count
+      this.level.insertNextLayer(this.bubbleFactory);
       this.playerAttempts = Game.SHOT_ATTEMPTS;
     }
   }
 
   private onBubbleLanded() {
-    const { level, bubbleShot } = this;
-
-    if (!bubbleShot) {
+    if (this.bubbleShot === null) {
       return;
     }
 
     // Insert bubble into level
-    const insertKey = level.insertBubble(bubbleShot);
-    const burstBubbles = level.getLocalBubblesOfColor(insertKey);
+    const insertKey = this.level.insertBubble(this.bubbleShot);
+    const burstBubbles = this.level.getLocalBubblesOfColor(insertKey);
 
     if (burstBubbles.length > 1) {
       // If bubbles to burst have been found, add to the burst queue
@@ -153,84 +230,52 @@ export class Game {
       // If no shots remaining then add bubble layer to level and
       // reset shot attempts
       if (this.playerAttempts <= 0) {
-        this.incrementLevel();
+        this.onAddBubbleLayer();
       }
     }
 
     this.bubbleShot = null;
   }
 
-  private getNextBubble() {
-    const gameNextBubble = this.bubbleFactory.createBubble();
-    gameNextBubble.getMesh().position.x = 1.5;
-    return gameNextBubble;
-  }
-
-  onShootBubble = () => {
-    if (this.bubbleShot !== null || this.bubbleBurstQueue.length > 0) {
+  private onShootBubble() {
+    if (
+      this.state !== GameState.GAME_PLAYING ||
+      this.bubbleShot !== null ||
+      this.bubbleBurstQueue.length > 0
+    ) {
       return;
     }
 
-    const imposters = this.level.getBubbleImposters();
+    const bubbleShot = this.bubbleFactory.createBubble();
+    const bubbleMesh = bubbleShot.getMesh();
 
-    const handleCollide = () => {
-      const imposter = this.bubbleShot.getImposter();
-      imposter.unregisterOnPhysicsCollide(imposters, handleCollide);
-
-      this.bubbleShot.getMesh().onAfterWorldMatrixUpdateObservable.clear();
-
+    this.level.registerCollision(bubbleShot, () => {
       this.scene.onBeforeRenderObservable.addOnce(() => {
         this.onBubbleLanded();
       });
-    };
-
-    const direction = this.launcher.getDirection();
-    const force = direction.scale(Game.SHOOT_POWER);
-
-    const bubble = this.getNextBubble();
-
-    bubble.getMesh().position.copyFrom(this.launcher.getPosition());
-
-    const imposter = bubble.getImposter();
-
-    imposter.registerOnPhysicsCollide(imposters, handleCollide);
-    imposter.setLinearVelocity(force);
-
-    bubble.getMesh().onAfterWorldMatrixUpdateObservable.add(() => {
-      if (
-        BABYLON.Vector3.Distance(
-          this.bubbleShot.getMesh().position,
-          this.launcher.getPosition()
-        ) > 20
-      ) {
-        this.bubbleShot.dispose();
-        this.bubbleShot = null;
-      }
     });
 
-    this.bubbleShot = bubble;
-  };
+    bubbleMesh.position.copyFrom(this.launcher.getPosition());
 
-  onMainMenu = () => {
+    const bubbleImposter = bubbleShot.getImposter();
+
+    bubbleImposter.setLinearVelocity(
+      this.launcher.getDirection().scale(Game.SHOOT_POWER)
+    );
+
+    this.bubbleShot = bubbleShot;
+  }
+
+  private onMainMenu() {
     this.onGameReset();
 
     this.uiManager
       .showStartMenu()
       .getStartButton()
-      .onPointerClickObservable.add(this.delay(1000, this.onGameStart));
+      .onPointerClickObservable.addOnce(this.delay(1000, this.onGamePlaying));
+  }
 
-    // this.onGameStart();
-  };
-
-  delay = (delay: number, action: () => void) => {
-    return () => {
-      new Promise(resolve => {
-        setTimeout(resolve, delay);
-      }).then(action);
-    };
-  };
-
-  onGameReset = () => {
+  private onGameReset() {
     if (this.bubbleShot) {
       this.bubbleShot.dispose();
       this.bubbleShot = null;
@@ -253,12 +298,12 @@ export class Game {
     } else {
       window.removeEventListener("click", this.onShootBubble);
     }
-  };
+  }
 
-  onGameStart = () => {
+  private onGamePlaying() {
     this.scene.onBeforeRenderObservable.add(this.onGameFrame);
 
-    this.incrementLevel();
+    this.onAddBubbleLayer();
 
     this.uiManager.showHUD().setScore(this.playerScore);
     // .setNextBubble(this.bubbleNext);
@@ -294,9 +339,20 @@ export class Game {
         }
       });
     }
-  };
+  }
 
-  onGameFrame = () => {
+  private onGameFrame() {
+    if (
+      this.bubbleShot !== null &&
+      BABYLON.Vector3.Distance(
+        this.bubbleShot.getMesh().position,
+        this.launcher.getPosition()
+      ) > 20
+    ) {
+      this.bubbleShot.dispose();
+      this.bubbleShot = null;
+    }
+
     if (this.bubbleBurstQueue.length > 0) {
       // Reset shot attempts
       this.playerScore += Game.SCORE_INCREMENT;
@@ -307,6 +363,7 @@ export class Game {
 
       const bubble = this.bubbleBurstQueue.pop();
 
+      /*
       if (!this.particles.isStarted()) {
         this.particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
         this.particles.color2 = BABYLON.Color4.FromColor3(
@@ -316,19 +373,29 @@ export class Game {
         this.particles.start();
         this.particles.targetStopDuration = 0.125;
       }
+      */
 
       this.level.removeBubble(bubble);
 
       bubble.dispose();
     }
-  };
+  }
 
-  onGameOver = () => {
+  private onGameOver() {
+    this.onGameReset();
+
+    const particles = createConfetti(this.scene, new BABYLON.Vector3(0, 15, 0));
+    particles.start();
+
     const gameOver = this.uiManager.showGameOverScreen();
-    gameOver.getMenuButton().onPointerClickObservable.add(this.onMainMenu);
-  };
+    gameOver.getMenuButton().onPointerClickObservable.addOnce(() => {
+      particles.stop();
 
-  setupVR(): void {
+      this.setState(GameState.GAME_MENU);
+    });
+  }
+
+  private configVirtualDisplay(): void {
     const VRHelper = this.scene.createDefaultVRExperience({
       createDeviceOrientationCamera: true,
       trackPosition: true
@@ -391,55 +458,5 @@ export class Game {
     }
 
     this.VRHelper = VRHelper;
-    {
-      /*
-      const camera = new BABYLON.UniversalCamera(
-        "camera",
-        new BABYLON.Vector3(7, -10, 7),
-        this.scene
-      );
-      camera.fov = 1.1;
-      camera.setTarget(new BABYLON.Vector3(0, 0, 0));
-
-      camera.attachControl(this.engine.getRenderingCanvas(), false);
-
-      camera.onAfterCheckInputsObservable.add(camera => {
-        this.uiManager.updatePlacement(
-          camera.position,
-          camera.getDirection(BABYLON.Vector3.Forward()),
-          5
-        );
-      });
-
-      window.addEventListener("keyup", e => {
-        if (e.keyCode === 32) {
-          this.incrementLevel();
-        }
-        // else {
-        //   if (// this.gameState === GameState.PLAYING) {
-        //   }
-        // }
-        if (e.key === "a") {
-        }
-      });
-
-      window.addEventListener("mousemove", (event: MouseEvent) => {
-        const pickingInfo = this.scene.pick(
-          event.clientX,
-          event.clientY,
-          (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
-          false,
-          this.VRHelper.webVRCamera
-        );
-        if (pickingInfo.hit) {
-          const target = pickingInfo.pickedPoint;
-
-          target.y = Math.max(target.y, Level.BASELINE);
-
-          this.launcher.lookAt(target);
-        }
-      });
-      */
-    }
   }
 }

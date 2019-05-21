@@ -237,7 +237,7 @@ export class Level {
     return bubbles;
   }
 
-  public getBubbleImposters() {
+  private getBubbleImposters() {
     const imposters: BABYLON.PhysicsImpostor[] = [this.top.physicsImpostor]; //[this.top.physicsImpostor];
 
     for (const bubble of this.getBubbles()) {
@@ -389,5 +389,17 @@ export class Level {
         place(bubble, x, LEVEL_LAYERS, z);
       }
     }
+  }
+
+  public registerCollision(bubble: Bubble, handler: () => void) {
+    const imposter = bubble.getImposter();
+    const imposters = this.getBubbleImposters();
+
+    const handleCollide = () => {
+      imposter.unregisterOnPhysicsCollide(imposters, handleCollide);
+      handler();
+    };
+
+    imposter.registerOnPhysicsCollide(imposters, handleCollide);
   }
 }
