@@ -4,110 +4,13 @@ import { BubbleFactory } from "./bubbleFactory";
 import { Player } from "./objects/player";
 import { Level } from "./objects/level";
 import { UIManager } from "./ui";
+import { Particles } from "./objects/particles";
 
 const enum GameState {
   GAME_MENU = "GAME_MENU",
   GAME_PLAYING = "GAME_PLAYING",
   GAME_BUSY = "GAME_BUSY",
   GAME_OVER = "GAME_OVER"
-}
-
-function createConfetti(scene: BABYLON.Scene, position: BABYLON.Vector3) {
-  const particles = new BABYLON.ParticleSystem(
-    "particles-confetti",
-    100,
-    scene
-  );
-
-  particles.particleTexture = new BABYLON.Texture(
-    "./images/particle-confetti.png",
-    scene
-  );
-
-  particles.startPositionFunction = (
-    a: any,
-    b: any,
-    particle: BABYLON.Particle
-  ) => {
-    particle.position
-      .copyFrom(position)
-      .addInPlace(
-        new BABYLON.Vector3(
-          10 * (Math.random() - 0.5),
-          0,
-          10 * (Math.random() - 0.5)
-        )
-      );
-  };
-  particles.startDirectionFunction = (
-    a: any,
-    b: any,
-    particle: BABYLON.Particle
-  ) => {
-    particle.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5);
-  };
-
-  particles.maxAngularSpeed = 15;
-  particles.minAngularSpeed = -15;
-
-  particles.maxInitialRotation = Math.PI * 2;
-  particles.minInitialRotation = 0;
-
-  particles.maxSize = 1;
-  particles.minSize = 0.5;
-  particles.gravity = new BABYLON.Vector3(0, -5.81, 0);
-
-  particles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-
-  particles.emitRate = 25;
-  particles.emitter = BABYLON.Vector3.Zero();
-  particles.minEmitPower = 5;
-  particles.maxEmitPower = 10;
-  particles.minLifeTime = 3.5;
-  particles.maxLifeTime = 5;
-
-  particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
-  particles.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
-
-  return particles;
-}
-
-function createBubblePopPartciles(scene: BABYLON.Scene) {
-  const particles = new BABYLON.ParticleSystem("particles", 2000, scene);
-
-  particles.particleTexture = new BABYLON.Texture(
-    "./images/particle-bubble-burst.png",
-    scene
-  );
-
-  particles.startDirectionFunction = (
-    a: any,
-    b: any,
-    particle: BABYLON.Particle
-  ) => {
-    particle.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5);
-  };
-
-  particles.maxAngularSpeed = 25;
-  particles.minAngularSpeed = -25;
-
-  particles.maxInitialRotation = Math.PI * 2;
-  particles.minInitialRotation = 0;
-
-  particles.maxSize = 1;
-  particles.minSize = 0.5;
-  particles.gravity = new BABYLON.Vector3(0, -9.81, 0);
-
-  particles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-
-  particles.emitRate = 500;
-  particles.minEmitPower = 15;
-  particles.maxEmitPower = 20;
-
-  particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
-  particles.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
-
-  return particles;
 }
 
 export class Game {
@@ -139,7 +42,7 @@ export class Game {
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
 
-    this.bubbleParticles = createBubblePopPartciles(this.scene);
+    this.bubbleParticles = Particles.createBubblePopPartciles(this.scene);
     this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
     this.launcher = new Player();
@@ -384,7 +287,10 @@ export class Game {
   private onGameOver() {
     this.onGameReset();
 
-    const particles = createConfetti(this.scene, new BABYLON.Vector3(0, 15, 0));
+    const particles = Particles.createConfetti(
+      this.scene,
+      new BABYLON.Vector3(0, 15, 0)
+    );
     particles.start();
 
     const gameOver = this.uiManager.showGameOverScreen();
