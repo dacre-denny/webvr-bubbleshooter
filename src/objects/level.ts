@@ -68,22 +68,7 @@ export class Level {
     );
 
     //If no colors add colors to sphere
-    var colors = sphere.getVerticesData(BABYLON.VertexBuffer.ColorKind);
-    if (!colors) {
-      colors = [];
-
-      var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-
-      for (var p = 0; p < positions.length / 3; p++) {
-        const g = Math.sin(positions[p * 3 + 0]) * 0.5 + 0.5;
-        const b = Math.cos(positions[p * 3 + 2]) * 0.5 + 0.5;
-        const r = Math.cos(1.7 + positions[p * 3 + 2]) * 0.5 + 0.5;
-
-        colors.push(r, g, b, 1);
-      }
-    }
-
-    sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
+    applyColors(sphere, BABYLON.Color3.Black());
 
     const material = new BABYLON.StandardMaterial("level.material", scene);
     material.diffuseColor = BABYLON.Color3.White();

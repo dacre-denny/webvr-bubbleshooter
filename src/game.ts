@@ -204,7 +204,9 @@ export class Game {
           this.player.getPosition()
         ) > 20
       ) {
-        onDestroyBubble(bubble);
+        this.scene.onBeforeRenderObservable.addOnce(() => {
+          onDestroyBubble(bubble);
+        });
       }
     };
 
@@ -233,7 +235,7 @@ export class Game {
       // Insert bubble into level
       const insertKey = this.level.insertBubble(bubble);
       const bubbles = this.level.pluckLocalBubblesOfSameColor(insertKey);
-      console.log("queu", bubbles.length);
+
       if (bubbles.length <= 1) {
         // If not bubbles to burst, then decrement shot attempts
         this.playerAttempts--;
@@ -249,6 +251,9 @@ export class Game {
         bubbles.forEach(bubble =>
           burstQue.add(() => {
             Particles.createBubblePopPartciles(this.scene, bubble);
+
+            this.playerScore += Game.SHOOT_POWER;
+            this.uiManager.showHUD().setScore(this.playerScore);
 
             this.soundExplode.play();
             bubble.dispose();
