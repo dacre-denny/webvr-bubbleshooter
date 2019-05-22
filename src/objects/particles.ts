@@ -146,6 +146,9 @@ export class Particles {
     };
 
     const observer = scene.onBeforeRenderObservable.add(onRender);
+
+    particleSystem.start();
+
     return particleSystem;
   }
 }

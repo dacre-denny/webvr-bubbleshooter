@@ -8,13 +8,6 @@ import { Particles } from "./objects/particles";
 import { hasVirtualDisplays } from "./utilities";
 import { ActionQueue } from "./objects/queue";
 
-const enum GameState {
-  GAME_MENU = "GAME_MENU",
-  GAME_PLAYING = "GAME_PLAYING",
-  GAME_BUSY = "GAME_BUSY",
-  GAME_OVER = "GAME_OVER"
-}
-
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 3;
@@ -26,12 +19,9 @@ export class Game {
   private uiManager: UIManager;
   private player: Player;
   private level: Level;
-  private state: GameState;
 
   private playerAttempts: number;
   private playerScore: number;
-
-  // private bubbleFactory: BubbleFactory;
 
   constructor(canvasElement: string) {
     const canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -41,7 +31,6 @@ export class Game {
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
 
-    //this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
     this.player = new Player();
     this.uiManager = new UIManager(this.scene);
@@ -67,35 +56,7 @@ export class Game {
       this.scene.render();
     });
 
-    // this.setState(GameState.GAME_OVER);
-    this.setState(GameState.GAME_MENU);
-    //this.setState(GameState.GAME_PLAYING);
-  }
-
-  private setState(state: GameState) {
-    if (state === this.state) {
-      return;
-    }
-
-    switch (state) {
-      case GameState.GAME_MENU: {
-        this.onMainMenu();
-        break;
-      }
-      case GameState.GAME_OVER: {
-        this.onGameOver();
-        break;
-      }
-      case GameState.GAME_BUSY: {
-        break;
-      }
-      case GameState.GAME_PLAYING: {
-        this.onGamePlaying();
-        break;
-      }
-    }
-
-    this.state = state;
+    this.onMainMenu();
   }
 
   private onMainMenu() {
@@ -105,7 +66,6 @@ export class Game {
       this.scene,
       new BABYLON.Vector3(0, 15, 0)
     );
-    confetti.start();
 
     this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
@@ -114,7 +74,7 @@ export class Game {
       .getStartButton()
       .onPointerClickObservable.addOnce(() => {
         confetti.stop();
-        this.setState(GameState.GAME_PLAYING);
+        this.onGamePlaying();
       });
   }
 
@@ -270,7 +230,7 @@ export class Game {
         onCleanUp();
 
         // Game over condition reached
-        this.setState(GameState.GAME_OVER);
+        this.onGameOver();
       }
     };
 
@@ -295,13 +255,12 @@ export class Game {
       this.scene,
       new BABYLON.Vector3(0, 15, 0)
     );
-    particles.start();
 
     const gameOver = this.uiManager.showGameOverScreen();
     gameOver.getMenuButton().onPointerClickObservable.addOnce(() => {
       particles.stop();
 
-      this.setState(GameState.GAME_MENU);
+      this.onMainMenu();
     });
   }
 }
