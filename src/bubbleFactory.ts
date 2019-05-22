@@ -56,21 +56,6 @@ export class BubbleFactory {
     material.diffuseColor = BABYLON.Color3.White();
 
     for (const [key, color] of mapping.entries()) {
-      /*
-      material.diffuseColor = color;
-
-      const mesh = BABYLON.MeshBuilder.CreateIcoSphere(
-        `bubble.mesh.${key}`,
-        { radius: Bubble.RADIUS, subdivisions: 1 },
-        scene
-      );
-
-      material.disableLighting = true;
-      material.emissiveColor = color; //BABYLON.Color3.White();
-
-      mesh.isVisible = false;
-      mesh.material = material;
-*/
       const mesh = this.createColor(scene, material, color);
       bubbles.set(key, mesh);
     }

@@ -255,6 +255,16 @@ export class Level {
     this.level = level;
   }
 
+  public reset() {
+    for (const [key, bubble] of this.lattice.entries()) {
+      if (bubble) {
+        bubble.dispose();
+      }
+    }
+
+    this.lattice.clear();
+  }
+
   public getBubbles(): Bubble[] {
     const bubbles: Bubble[] = [];
     for (const value of this.lattice.values()) {

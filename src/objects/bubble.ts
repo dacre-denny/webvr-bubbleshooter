@@ -63,6 +63,20 @@ export class Bubble {
     return this.color;
   }
 
+  public getColor3() {
+    switch (this.color) {
+      case Colors.RED:
+        return BABYLON.Color3.Red();
+      case Colors.BLUE:
+        return BABYLON.Color3.Blue();
+      case Colors.GREEN:
+        return BABYLON.Color3.Green();
+      case Colors.YELLOW:
+        return BABYLON.Color3.Yellow();
+    }
+    return BABYLON.Color3.White();
+  }
+
   public setPosition(position: BABYLON.Vector3) {
     this.mesh.position.copyFrom(position);
   }
@@ -84,9 +98,11 @@ export class Bubble {
   }
 
   public dispose() {
-    this.mesh.physicsImpostor.dispose();
-    this.mesh.dispose();
+    if (this.mesh) {
+      this.mesh.physicsImpostor.dispose();
+      this.mesh.dispose();
 
-    this.mesh = null;
+      this.mesh = null;
+    }
   }
 }

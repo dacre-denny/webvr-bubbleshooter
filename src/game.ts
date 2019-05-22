@@ -6,51 +6,13 @@ import { Level } from "./objects/level";
 import { UIManager } from "./ui";
 import { Particles } from "./objects/particles";
 import { hasVirtualDisplays } from "./utilities";
+import { ActionQueue } from "./objects/queue";
 
 const enum GameState {
   GAME_MENU = "GAME_MENU",
   GAME_PLAYING = "GAME_PLAYING",
   GAME_BUSY = "GAME_BUSY",
   GAME_OVER = "GAME_OVER"
-}
-
-type Action = () => void;
-
-class ActionQueue {
-  actions: Action[] = [];
-  timer: number = null;
-
-  private iterate() {
-    if (this.timer !== null) {
-      clearTimeout(this.timer);
-    }
-
-    this.timer = setTimeout(() => {
-      const action = this.actions.shift();
-
-      if (action) {
-        action();
-      }
-
-      if (this.actions.length > 0) {
-        this.iterate();
-      } else {
-        this.timer = null;
-      }
-    }, 50);
-  }
-
-  public add(callback: Action) {
-    this.actions.push(callback);
-
-    if (this.timer === null) {
-      this.iterate();
-    }
-  }
-
-  public isBusy() {
-    return !!this.timer;
-  }
 }
 
 export class Game {
@@ -69,8 +31,7 @@ export class Game {
   private playerAttempts: number;
   private playerScore: number;
 
-  private bubbleFactory: BubbleFactory;
-  // private bubbleBurstQueue: Array<Bubble>;
+  // private bubbleFactory: BubbleFactory;
 
   constructor(canvasElement: string) {
     const canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -80,15 +41,13 @@ export class Game {
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
 
-    this.bubbleFactory = new BubbleFactory(this.scene);
+    //this.bubbleFactory = new BubbleFactory(this.scene);
     this.level = new Level();
     this.player = new Player();
     this.uiManager = new UIManager(this.scene);
 
     this.playerAttempts = Game.SHOT_ATTEMPTS;
     this.playerScore = 0;
-
-    //this.bubbleBurstQueue = [];
 
     this.VRHelper = this.scene.createDefaultVRExperience({
       createDeviceOrientationCamera: true,
@@ -109,8 +68,8 @@ export class Game {
     });
 
     // this.setState(GameState.GAME_OVER);
-    // this.setState(GameState.GAME_MENU);
-    this.setState(GameState.GAME_PLAYING);
+    this.setState(GameState.GAME_MENU);
+    //this.setState(GameState.GAME_PLAYING);
   }
 
   private setState(state: GameState) {
@@ -140,6 +99,8 @@ export class Game {
   }
 
   private onMainMenu() {
+    this.level.reset();
+
     const confetti = Particles.createConfetti(
       this.scene,
       new BABYLON.Vector3(0, 15, 0)
@@ -161,7 +122,9 @@ export class Game {
     this.playerScore = 0;
     this.playerAttempts = Game.SHOT_ATTEMPTS;
 
-    this.level.insertBubbleLayer(this.bubbleFactory);
+    const bubbleFactory = new BubbleFactory(this.scene);
+
+    this.level.insertBubbleLayer(bubbleFactory);
     this.uiManager.showHUD().setScore(this.playerScore);
 
     let shotBubble: Bubble = null;
@@ -257,7 +220,7 @@ export class Game {
 
     const onShootBubble = () => {
       if (canShootBubble()) {
-        const bubble = this.bubbleFactory.createBubble();
+        const bubble = bubbleFactory.createBubble();
         bubble.setPosition(this.player.getPosition());
         bubble.setVelocity(this.player.getDirection().scale(Game.SHOOT_POWER));
 
@@ -288,12 +251,17 @@ export class Game {
         // If no shots remaining then add bubble layer to level and
         // reset shot attempts
         if (this.playerAttempts <= 0) {
-          this.level.insertBubbleLayer(this.bubbleFactory);
+          this.level.insertBubbleLayer(bubbleFactory);
           this.playerAttempts = Game.SHOT_ATTEMPTS;
         }
       } else {
         // If bubbles to burst have been found, add to the burst queue
-        bubbles.forEach(bubble => burstQue.add(() => bubble.dispose()));
+        bubbles.forEach(bubble =>
+          burstQue.add(() => {
+            Particles.createBubblePopPartciles(this.scene, bubble);
+            bubble.dispose();
+          })
+        );
 
         this.playerAttempts = Game.SHOT_ATTEMPTS;
       }

@@ -2,75 +2,87 @@ import * as BABYLON from "babylonjs";
 import { Bubble } from "./bubble";
 
 export class Particles {
-  public static createBubblePopPartciles(
-    scene: BABYLON.Scene,
-    position: BABYLON.Vector3
-  ) {
-    const particles = new BABYLON.ParticleSystem("particles", 20, scene);
+  public static createBubblePopPartciles(scene: BABYLON.Scene, bubble: Bubble) {
+    const particleSystem = new BABYLON.ParticleSystem(
+      "particles-bubble",
+      45,
+      scene
+    );
 
-    particles.particleTexture = new BABYLON.Texture(
+    particleSystem.particleTexture = new BABYLON.Texture(
       "./images/particle-bubble-burst.png",
       scene
     );
 
-    particles.startDirectionFunction = (
+    particleSystem.startDirectionFunction = (
       a: any,
       b: any,
       particle: BABYLON.Particle
     ) => {
-      particle.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+      particle.direction.set(
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+        Math.random() - 0.5
+      );
     };
 
-    particles.maxAngularSpeed = 25;
-    particles.minAngularSpeed = -25;
+    particleSystem.maxAngularSpeed = 15;
+    particleSystem.minAngularSpeed = -15;
 
-    particles.maxInitialRotation = Math.PI * 2;
-    particles.minInitialRotation = 0;
+    particleSystem.maxInitialRotation = Math.PI * 2;
+    particleSystem.minInitialRotation = 0;
 
-    particles.maxSize = 1;
-    particles.minSize = 0.5;
-    particles.gravity = new BABYLON.Vector3(0, -9.81, 0);
+    particleSystem.maxSize = 1;
+    particleSystem.minSize = 0.5;
+    particleSystem.gravity = new BABYLON.Vector3(0, -9.8, 0);
 
-    particles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+    particleSystem.preWarmStepOffset = 0;
+    particleSystem.manualEmitCount = 100;
+    particleSystem.minEmitPower = 5;
+    particleSystem.maxEmitPower = 20;
 
-    particles.emitRate = 500;
-    particles.minEmitPower = 15;
-    particles.maxEmitPower = 20;
-    particles.emitter = position;
+    particleSystem.maxLifeTime = 0.75;
+    particleSystem.minLifeTime = 0.5;
+    particleSystem.emitter = bubble.getPosition();
+    particleSystem.disposeOnStop = true;
 
-    particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
-    particles.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
+    particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+    particleSystem.textureMask = BABYLON.Color4.FromInts(255, 255, 255, 255);
+
+    particleSystem.color1 = BABYLON.Color4.FromColor3(bubble.getColor3());
+    particleSystem.color2 = BABYLON.Color4.FromColor3(
+      bubble.getColor3().add(BABYLON.Color3.White().scale(0.5))
+    );
+    particleSystem.colorDead = BABYLON.Color4.FromColor3(bubble.getColor3(), 0);
 
     const onRender = () => {
-      if (!particles.isStarted()) {
-        if (!particles.isAlive()) {
-          particles.dispose();
-          scene.onBeforeRenderObservable.remove(observer);
-        }
+      if (particleSystem.particles.length > 0) {
+        particleSystem.stop();
+        scene.onBeforeRenderObservable.remove(observer);
       }
     };
 
     const observer = scene.onBeforeRenderObservable.add(onRender);
 
-    return particles;
+    particleSystem.start();
   }
 
   public static createConfetti(
     scene: BABYLON.Scene,
     position: BABYLON.Vector3
   ) {
-    const particles = new BABYLON.ParticleSystem(
+    const particleSystem = new BABYLON.ParticleSystem(
       "particles-confetti",
       100,
       scene
     );
 
-    particles.particleTexture = new BABYLON.Texture(
+    particleSystem.particleTexture = new BABYLON.Texture(
       "./images/particle-confetti.png",
       scene
     );
 
-    particles.startPositionFunction = (
+    particleSystem.startPositionFunction = (
       a: any,
       b: any,
       particle: BABYLON.Particle
@@ -85,7 +97,7 @@ export class Particles {
           )
         );
     };
-    particles.startDirectionFunction = (
+    particleSystem.startDirectionFunction = (
       a: any,
       b: any,
       particle: BABYLON.Particle
@@ -93,38 +105,47 @@ export class Particles {
       particle.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5);
     };
 
-    particles.maxAngularSpeed = 15;
-    particles.minAngularSpeed = -15;
+    particleSystem.maxAngularSpeed = 15;
+    particleSystem.minAngularSpeed = -15;
 
-    particles.maxInitialRotation = Math.PI * 2;
-    particles.minInitialRotation = 0;
+    particleSystem.maxInitialRotation = Math.PI * 2;
+    particleSystem.minInitialRotation = 0;
 
-    particles.maxSize = 1;
-    particles.minSize = 0.5;
-    particles.gravity = new BABYLON.Vector3(0, -5.81, 0);
+    particleSystem.maxSize = 1;
+    particleSystem.minSize = 0.5;
+    particleSystem.gravity = new BABYLON.Vector3(0, -5.81, 0);
 
-    particles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+    particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
 
-    particles.emitRate = 25;
-    particles.emitter = BABYLON.Vector3.Zero();
-    particles.minEmitPower = 5;
-    particles.maxEmitPower = 10;
-    particles.minLifeTime = 3.5;
-    particles.maxLifeTime = 5;
+    particleSystem.emitRate = 25;
+    particleSystem.emitter = BABYLON.Vector3.Zero();
+    particleSystem.minEmitPower = 5;
+    particleSystem.maxEmitPower = 10;
+    particleSystem.minLifeTime = 3.5;
+    particleSystem.maxLifeTime = 5;
 
-    particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
-    particles.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
+    particleSystem.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
+    particleSystem.color2 = BABYLON.Color4.FromColor3(BABYLON.Color3.Blue());
+    particleSystem.colorDead = BABYLON.Color4.FromColor3(
+      BABYLON.Color3.Yellow(),
+      0
+    );
+
+    particleSystem.disposeOnStop = true;
+
+    particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+    particleSystem.textureMask = BABYLON.Color4.FromInts(255, 255, 255, 255);
 
     const onRender = () => {
-      if (!particles.isStarted()) {
-        if (!particles.isAlive()) {
-          particles.dispose();
+      if (!particleSystem.isStarted()) {
+        if (!particleSystem.isAlive()) {
+          particleSystem.dispose();
           scene.onBeforeRenderObservable.remove(observer);
         }
       }
     };
 
     const observer = scene.onBeforeRenderObservable.add(onRender);
-    return particles;
+    return particleSystem;
   }
 }
