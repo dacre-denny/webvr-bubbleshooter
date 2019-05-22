@@ -104,7 +104,6 @@ export class Game {
     // this.setState(GameState.GAME_OVER);
     // this.setState(GameState.GAME_MENU);
     this.setState(GameState.GAME_PLAYING);
-    this.onGameFrame = this.onGameFrame.bind(this);
   }
 
   private delay(delay: number, action: () => void) {
@@ -334,43 +333,6 @@ export class Game {
       window.addEventListener("click", onShootBubble);
       window.addEventListener("mousemove", onUpdatePlayer);
     }
-  }
-
-  private onGameFrame() {
-    /*
-    if (this.bubbleShot !== null) {
-      if (
-        BABYLON.Vector3.Distance(
-          this.bubbleShot.getMesh().position,
-          this.player.getPosition()
-        ) > 20
-      ) {
-        this.bubbleShot.dispose();
-        this.bubbleShot = null;
-      }
-    }
-// */
-    //     if (this.bubbleBurstQueue.length > 0) {
-    //       // Reset shot attempts
-    //       this.playerScore += Game.SCORE_INCREMENT;
-    //       // Update ingame hud
-    //       this.uiManager.showHUD().setScore(this.playerScore);
-    //       //   .setNextBubble(this.bubbleNext);
-    //       const bubble = this.bubbleBurstQueue.pop();
-    //       /*
-    //       if (!this.particles.isStarted()) {
-    //         this.particles.color1 = BABYLON.Color4.FromColor3(BABYLON.Color3.Red());
-    //         this.particles.color2 = BABYLON.Color4.FromColor3(
-    //           BABYLON.Color3.Blue()
-    //         );
-    //         this.particles.emitter = bubble.getMesh().position;
-    //         this.particles.start();
-    //         this.particles.targetStopDuration = 0.125;
-    //       }
-    //       */
-    //       this.level.removeBubble(bubble);
-    //       bubble.dispose();
-    //     }
   }
 
   private onGameOver() {
