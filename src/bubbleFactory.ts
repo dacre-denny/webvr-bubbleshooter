@@ -1,6 +1,6 @@
 import * as BABYLON from "babylonjs";
 import { Bubble, Colors } from "./objects/bubble";
-import { randomColor } from "./utilities";
+import { randomColor, applyColors } from "./utilities";
 
 export class BubbleFactory {
   private bubbles: Map<Colors, BABYLON.Mesh>;
@@ -21,20 +21,8 @@ export class BubbleFactory {
       scene
     );
     //If no colors add colors to sphere
-    var colors = sphere.getVerticesData(BABYLON.VertexBuffer.ColorKind);
-    if (!colors) {
-      colors = [];
-      var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+    applyColors(sphere, color);
 
-      for (var p = 0; p < positions.length / 3; p++) {
-        const g = color.g + Math.sin(positions[p * 3 + 0]) * 0.75;
-        const b = color.b + Math.cos(positions[p * 3 + 2]) * 0.75;
-        const r = color.r + Math.cos(1.7 + positions[p * 3 + 2]) * 0.75;
-
-        colors.push(r, g, b, 1);
-      }
-    }
-    sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
     sphere.material = material;
     sphere.isVisible = false;
     return sphere;

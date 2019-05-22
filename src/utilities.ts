@@ -1,3 +1,4 @@
+import * as BABYLON from "babylonjs";
 import { Colors } from "./objects/bubble";
 import * as GUI from "babylonjs-gui";
 
@@ -32,4 +33,21 @@ export function createTextBlock(
 
 export function hasVirtualDisplays() {
   return window.navigator.activeVRDisplays;
+}
+
+export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
+  var colors = sphere.getVerticesData(BABYLON.VertexBuffer.ColorKind);
+  if (!colors) {
+    colors = [];
+    var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+
+    for (var p = 0; p < positions.length / 3; p++) {
+      const g = color.g + Math.sin(positions[p * 3 + 0]) * 0.75;
+      const b = color.b + Math.cos(positions[p * 3 + 2]) * 0.75;
+      const r = color.r + Math.cos(1.7 + positions[p * 3 + 2]) * 0.75;
+
+      colors.push(r, g, b, 1);
+    }
+  }
+  sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
 }

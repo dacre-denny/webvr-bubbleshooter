@@ -20,6 +20,10 @@ export class Game {
   private player: Player;
   private level: Level;
 
+  private soundMusic: BABYLON.Sound;
+  private soundButton: BABYLON.Sound;
+  private soundExplode: BABYLON.Sound;
+
   private playerAttempts: number;
   private playerScore: number;
 
@@ -37,6 +41,31 @@ export class Game {
 
     this.playerAttempts = Game.SHOT_ATTEMPTS;
     this.playerScore = 0;
+
+    this.soundMusic = new BABYLON.Sound(
+      "sound-music",
+      "./audio/music.mp3",
+      this.scene,
+      null,
+      {
+        loop: true,
+        autoplay: true
+      }
+    );
+
+    this.soundButton = new BABYLON.Sound(
+      "sound-button",
+      "./audio/button.mp3",
+      this.scene,
+      null
+    );
+
+    this.soundExplode = new BABYLON.Sound(
+      "sound-explode",
+      "./audio/explode.mp3",
+      this.scene,
+      null
+    );
 
     this.VRHelper = this.scene.createDefaultVRExperience({
       createDeviceOrientationCamera: true,
@@ -74,6 +103,7 @@ export class Game {
       .getStartButton()
       .onPointerClickObservable.addOnce(() => {
         confetti.stop();
+        this.soundButton.play();
         this.onGamePlaying();
       });
   }
@@ -219,6 +249,8 @@ export class Game {
         bubbles.forEach(bubble =>
           burstQue.add(() => {
             Particles.createBubblePopPartciles(this.scene, bubble);
+
+            this.soundExplode.play();
             bubble.dispose();
           })
         );
@@ -260,6 +292,7 @@ export class Game {
     gameOver.getMenuButton().onPointerClickObservable.addOnce(() => {
       particles.stop();
 
+      this.soundButton.play();
       this.onMainMenu();
     });
   }

@@ -1,7 +1,7 @@
 import * as BABYLON from "babylonjs";
 import { Bubble } from "./bubble";
 import { BubbleFactory } from "../bubbleFactory";
-import { clamp } from "../utilities";
+import { clamp, applyColors } from "../utilities";
 
 const LEVEL_WIDTH = 4;
 const LEVEL_DEPTH = 4;
@@ -97,26 +97,6 @@ export class Level {
     });
   }
 
-  private applyWallColor(sphere: BABYLON.Mesh, o: BABYLON.Vector3) {
-    //If no colors add colors to sphere
-    var colors = sphere.getVerticesData(BABYLON.VertexBuffer.ColorKind);
-    if (!colors) {
-      colors = [];
-
-      var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-
-      for (var p = 0; p < positions.length / 3; p++) {
-        const g = Math.sin(o.x + positions[p * 3 + 0]) * 0.125 + 0.85;
-        const b = Math.cos(o.y + positions[p * 3 + 2]) * 0.125 + 0.85;
-        const r = Math.cos(o.z + 1.7 + positions[p * 3 + 2]) * 0.125 + 0.85;
-
-        colors.push(r, g, b, 0.05);
-      }
-    }
-
-    sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
-  }
-
   public create(scene: BABYLON.Scene) {
     this.dispose();
 
@@ -191,7 +171,10 @@ export class Level {
       );
       mesh.visibility = 0.5;
 
-      this.applyWallColor(mesh, mesh.position);
+      applyColors(
+        mesh,
+        new BABYLON.Color3(mesh.position.x, mesh.position.y, mesh.position.z)
+      );
 
       const imposter = new BABYLON.PhysicsImpostor(
         mesh,
@@ -223,7 +206,10 @@ export class Level {
       mesh.position.set(-OFFSET_X, LEVEL_LAYERS + Bubble.RADIUS, -OFFSET_Z);
       mesh.visibility = 0.5;
 
-      this.applyWallColor(mesh, mesh.position);
+      applyColors(
+        mesh,
+        new BABYLON.Color3(mesh.position.x, mesh.position.y, mesh.position.z)
+      );
 
       const imposter = new BABYLON.PhysicsImpostor(
         mesh,
