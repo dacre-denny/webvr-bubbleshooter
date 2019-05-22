@@ -14,36 +14,42 @@ const enum GameState {
   GAME_OVER = "GAME_OVER"
 }
 
-class BubbleQueue {
-  bubbles: Bubble[] = [];
-  timer: number;
+type Action = () => void;
+
+class ActionQueue {
+  actions: Action[] = [];
+  timer: number = null;
 
   private iterate() {
-    setTimeout(() => {
-      const bubble = this.bubbles.pop();
+    if (this.timer !== null) {
+      clearTimeout(this.timer);
+    }
 
-      if (bubble) {
-        Bubble.burst(bubble);
+    this.timer = setTimeout(() => {
+      const action = this.actions.shift();
+
+      if (action) {
+        action();
       }
 
-      if (this.bubbles.length) {
+      if (this.actions.length > 0) {
         this.iterate();
       } else {
-        this.timer = undefined;
+        this.timer = null;
       }
-    }, 500);
+    }, 50);
   }
 
-  public add(bubble: Bubble) {
-    this.bubbles.push(bubble);
+  public add(callback: Action) {
+    this.actions.push(callback);
 
-    if (this.timer === undefined) {
+    if (this.timer === null) {
       this.iterate();
     }
   }
 
-  public isEmpty() {
-    return this.bubbles.length === 0;
+  public isBusy() {
+    return !!this.timer;
   }
 }
 
@@ -55,8 +61,6 @@ export class Game {
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
-  private queue: BubbleQueue;
-  // private bubbleParticles: BABYLON.ParticleSystem;
   private uiManager: UIManager;
   private player: Player;
   private level: Level;
@@ -80,14 +84,17 @@ export class Game {
     this.level = new Level();
     this.player = new Player();
     this.uiManager = new UIManager(this.scene);
-    this.queue = new BubbleQueue();
 
     this.playerAttempts = Game.SHOT_ATTEMPTS;
     this.playerScore = 0;
 
     //this.bubbleBurstQueue = [];
 
-    this.configVirtualDisplay();
+    this.VRHelper = this.scene.createDefaultVRExperience({
+      createDeviceOrientationCamera: true,
+      trackPosition: true
+    });
+    this.VRHelper.enableInteractions();
 
     this.level.create(this.scene);
     this.player.create(this.scene);
@@ -104,14 +111,6 @@ export class Game {
     // this.setState(GameState.GAME_OVER);
     // this.setState(GameState.GAME_MENU);
     this.setState(GameState.GAME_PLAYING);
-  }
-
-  private delay(delay: number, action: () => void) {
-    return () => {
-      new Promise(resolve => {
-        setTimeout(resolve, delay);
-      }).then(action);
-    };
   }
 
   private setState(state: GameState) {
@@ -166,45 +165,59 @@ export class Game {
     this.uiManager.showHUD().setScore(this.playerScore);
 
     let shotBubble: Bubble = null;
+
     const VRHelper = this.VRHelper;
-    const webVRCamera = VRHelper.webVRCamera;
+    const camera = VRHelper.webVRCamera;
+    const burstQue = new ActionQueue();
 
     const canShootBubble = () => {
       if (shotBubble !== null) {
         return false;
       }
-      if (!this.queue.isEmpty()) {
+      if (burstQue.isBusy()) {
         return false;
       }
       return true;
     };
 
-    const onUpdatePlayer = (event?: MouseEvent) => {
+    const onCleanUp = () => {
+      // Clean up event binding
       if (hasVirtualDisplays()) {
-        if (webVRCamera.leftController) {
-          const leftController = webVRCamera.leftController;
-
-          this.uiManager.updatePlacement(
-            VRHelper.position.add(leftController.position),
-            leftController.getForwardRay().direction,
-            5
-          );
-
-          const pickingInfo = this.scene.pickWithRay(
-            leftController.getForwardRay(),
-            (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
-            false
-          );
-
-          if (pickingInfo.hit) {
-            const target = pickingInfo.pickedPoint;
-
-            target.y = Math.max(target.y, Level.BASELINE);
-
-            this.player.lookAt(target);
-          }
+        const camera = this.VRHelper.webVRCamera;
+        camera.onAfterCheckInputsObservable.clear();
+        if (camera.leftController) {
+          camera.leftController.onTriggerStateChangedObservable.clear();
         }
       } else {
+        window.removeEventListener("click", onShootBubble);
+        window.removeEventListener("mousemove", onUpdatePlayer);
+      }
+    };
+
+    const onUpdatePlayer = (event?: MouseEvent | BABYLON.Camera) => {
+      if (hasVirtualDisplays() && camera.leftController) {
+        const leftController = camera.leftController;
+
+        this.uiManager.updatePlacement(
+          VRHelper.position.add(leftController.position),
+          leftController.getForwardRay().direction,
+          1
+        );
+
+        const pickingInfo = this.scene.pickWithRay(
+          leftController.getForwardRay(),
+          (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
+          false
+        );
+
+        if (pickingInfo.hit) {
+          const target = pickingInfo.pickedPoint;
+
+          target.y = Math.max(target.y, Level.BASELINE);
+
+          this.player.lookAt(target);
+        }
+      } else if (event instanceof MouseEvent) {
         const pickingInfo = this.scene.pick(
           event.clientX,
           event.clientY,
@@ -266,9 +279,9 @@ export class Game {
     const onStoppedBubble = (bubble: Bubble) => {
       // Insert bubble into level
       const insertKey = this.level.insertBubble(bubble);
-      const burstBubbles = this.level.getLocalBubblesOfColor(insertKey);
-
-      if (burstBubbles.length <= 1) {
+      const bubbles = this.level.pluckLocalBubblesOfSameColor(insertKey);
+      console.log("queu", bubbles.length);
+      if (bubbles.length <= 1) {
         // If not bubbles to burst, then decrement shot attempts
         this.playerAttempts--;
 
@@ -280,55 +293,27 @@ export class Game {
         }
       } else {
         // If bubbles to burst have been found, add to the burst queue
-        for (const burstBubble of burstBubbles) {
-          this.queue.add(burstBubble);
-        }
+        bubbles.forEach(bubble => burstQue.add(() => bubble.dispose()));
+
         this.playerAttempts = Game.SHOT_ATTEMPTS;
       }
 
       if (this.level.getBubbles().some(Level.belowBaseline)) {
+        onCleanUp();
+
         // Game over condition reached
         this.setState(GameState.GAME_OVER);
-
-        // Clean up event binding
-        if (hasVirtualDisplays()) {
-          const camera = this.VRHelper.webVRCamera;
-          camera.onAfterCheckInputsObservable.clear();
-          if (camera.leftController) {
-            camera.leftController.onTriggerStateChangedObservable.clear();
-          }
-        } else {
-          window.removeEventListener("click", onShootBubble);
-          window.removeEventListener("mousemove", onUpdatePlayer);
-        }
       }
     };
 
     if (hasVirtualDisplays()) {
-      const onControllerUpdate = () => {
-        if (webVRCamera.leftController) {
-          const leftController = webVRCamera.leftController;
-          const onTrigger = leftController.onTriggerStateChangedObservable;
-
-          if (!onTrigger.hasObservers()) {
-            onTrigger.add(eventData => {
-              if (eventData.value === 1) {
-                onShootBubble();
-              }
-            });
+      if (camera.leftController) {
+        camera.leftController.onTriggerStateChangedObservable.add(eventData => {
+          if (eventData.value === 1) {
+            onShootBubble();
           }
-
-          onUpdatePlayer();
-        } else {
-          this.uiManager.updatePlacement(
-            this.VRHelper.position.add(webVRCamera.position),
-            webVRCamera.getForwardRay().direction,
-            5
-          );
-        }
-      };
-
-      webVRCamera.onAfterCheckInputsObservable.add(onControllerUpdate);
+        });
+      }
     } else {
       window.addEventListener("click", onShootBubble);
       window.addEventListener("mousemove", onUpdatePlayer);
@@ -350,71 +335,5 @@ export class Game {
 
       this.setState(GameState.GAME_MENU);
     });
-  }
-
-  private configVirtualDisplay(): void {
-    const VRHelper = this.scene.createDefaultVRExperience({
-      createDeviceOrientationCamera: true,
-      trackPosition: true
-    });
-    VRHelper.enableInteractions();
-
-    if (window.navigator.activeVRDisplays) {
-      const { webVRCamera } = VRHelper;
-
-      VRHelper.onAfterEnteringVRObservable.add(() => {
-        VRHelper.position.set(3, -3, 3);
-      });
-      /*
-      webVRCamera.onAfterCheckInputsObservable.add(() => {
-        if (webVRCamera.controllers.length) {
-          webVRCamera.leftController.onTriggerStateChangedObservable.add(
-            eventData => {
-              if (eventData.value === 1) {
-                this.onShootBubble();
-              }
-            }
-          );
-
-          this.uiManager.updatePlacement(
-            VRHelper.position.add(webVRCamera.rightController.position),
-            webVRCamera.rightController.getForwardRay().direction,
-            5
-          );
-
-          const pickingInfo = this.scene.pickWithRay(
-            webVRCamera.leftController.getForwardRay(),
-            (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
-            false
-          );
-
-          if (pickingInfo.hit) {
-            const target = pickingInfo.pickedPoint;
-
-            target.y = Math.max(target.y, Level.BASELINE);
-
-            this.player.lookAt(target);
-          }
-        } else {
-          this.uiManager.updatePlacement(
-            VRHelper.position.add(webVRCamera.position),
-            webVRCamera.getForwardRay().direction,
-            5
-          );
-        }
-      });
-      */
-    } else {
-      VRHelper.currentVRCamera.position.set(0, -1.5, -15);
-      VRHelper.currentVRCamera.onAfterCheckInputsObservable.add(() => {
-        this.uiManager.updatePlacement(
-          VRHelper.position.add(VRHelper.currentVRCamera.position),
-          VRHelper.currentVRCamera.getForwardRay().direction,
-          5
-        );
-      });
-    }
-
-    this.VRHelper = VRHelper;
   }
 }

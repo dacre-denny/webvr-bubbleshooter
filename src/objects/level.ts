@@ -275,7 +275,7 @@ export class Level {
     return imposters;
   }
 
-  public getLocalBubblesOfColor(key: string) {
+  public pluckLocalBubblesOfSameColor(key: string) {
     const options = [
       [0, +1, 0],
       [0, -1, 0],
@@ -292,7 +292,8 @@ export class Level {
       return;
     }
 
-    const bubbles = new Set<Bubble>();
+    // const bubbles = new Set<Bubble>();
+    const keys = new Set<string>();
 
     const iterate = (x: number, y: number, z: number) => {
       const key = this.getKey(x, y, z);
@@ -306,17 +307,27 @@ export class Level {
         return;
       }
 
-      if (bubbles.has(b)) {
+      if (keys.has(key)) {
         return;
       }
-      bubbles.add(b);
+
+      keys.add(key);
       for (const [i, j, k] of options) {
         iterate(i + x, j + y, k + z);
       }
     };
     iterate(indicies[0], indicies[1], indicies[2]);
 
-    return Array.from(bubbles.values());
+    const bubbles = new Set<Bubble>();
+
+    if (keys.size > 1) {
+      for (const key of keys) {
+        bubbles.add(this.lattice.get(key));
+        this.lattice.delete(key);
+      }
+    }
+
+    return Array.from(bubbles);
   }
 
   public insertBubble(bubble: Bubble) {

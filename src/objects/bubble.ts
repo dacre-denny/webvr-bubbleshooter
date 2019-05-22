@@ -30,19 +30,19 @@ export class Bubble {
     return !!(mesh as any).bubble;
   }
 
-  public static burst(bubble: Bubble) {
-    if (bubble.getMesh()) {
-      const burst = Particles.createBubblePopPartciles(
-        bubble.getMesh().getScene(),
-        bubble.getPosition()
-      );
-      burst.start();
-      setTimeout(() => {
-        burst.stop();
-      }, 10);
-      bubble.dispose();
-    }
-  }
+  // public static xburst(bubble: Bubble) {
+  //   if (bubble.getMesh()) {
+  //     const burst = Particles.createBubblePopPartciles(
+  //       bubble.getMesh().getScene(),
+  //       bubble.getPosition()
+  //     );
+  //     burst.start();
+  //     setTimeout(() => {
+  //       burst.stop();
+  //     }, 10);
+  //     bubble.dispose();
+  //   }
+  // }
 
   constructor(mesh: BABYLON.InstancedMesh, color: Colors) {
     mesh.physicsImpostor = new BABYLON.PhysicsImpostor(
