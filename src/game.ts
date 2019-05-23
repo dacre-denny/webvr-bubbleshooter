@@ -7,12 +7,15 @@ import { UIManager } from "./ui";
 import { Particles } from "./objects/particles";
 import { hasVirtualDisplays } from "./utilities";
 import { ActionQueue } from "./objects/queue";
+import { GameOver } from "./screens/gameover";
+import { AssetsManager } from "babylonjs";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 3;
   static readonly SCORE_INCREMENT = 10;
 
+  private assetManager: AssetsManager;
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
@@ -31,6 +34,8 @@ export class Game {
     const canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
     this.engine = new BABYLON.Engine(canvas, false);
     this.scene = new BABYLON.Scene(this.engine);
+    this.assetManager = new AssetsManager(this.scene);
+    // this.assetManager.addImageTask()
 
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
@@ -49,7 +54,7 @@ export class Game {
       null,
       {
         loop: true,
-        autoplay: true
+        autoplay: !true
       }
     );
 
@@ -85,7 +90,7 @@ export class Game {
       this.scene.render();
     });
 
-    this.onMainMenu();
+    this.onGameOver();
   }
 
   private onMainMenu() {
@@ -285,20 +290,41 @@ export class Game {
     }
   }
 
+  private registerTrigger(callback: () => void) {
+    if (hasVirtualDisplays()) {
+      const { VRHelper } = this;
+      const camera = VRHelper.webVRCamera;
+      camera.leftController.onTriggerStateChangedObservable.add(eventData => {
+        if (eventData.value === 1) {
+          camera.leftController.onTriggerStateChangedObservable.clear();
+          callback();
+        }
+      });
+    } else {
+      const wrapper = () => {
+        window.removeEventListener("click", wrapper);
+        callback();
+      };
+
+      window.addEventListener("click", wrapper);
+    }
+  }
+
   private onGameOver() {
-    this.VRHelper.webVRCamera.onAfterCheckInputsObservable.clear();
+    const gameOver = new GameOver(this.scene);
 
     const particles = Particles.createConfetti(
       this.scene,
       new BABYLON.Vector3(0, 15, 0)
     );
 
-    const gameOver = this.uiManager.showGameOverScreen();
-    gameOver.getMenuButton().onPointerClickObservable.addOnce(() => {
-      particles.stop();
-
+    this.registerTrigger(() => {
       this.soundButton.play();
-      this.onMainMenu();
+      gameOver.close().add(() => {
+        alert(1);
+        particles.stop();
+        this.onMainMenu();
+      });
     });
   }
 }

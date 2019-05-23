@@ -14,23 +14,6 @@ export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-export function createTextBlock(
-  color: string,
-  fontSize: number,
-  left: number,
-  top: number
-) {
-  const element = new GUI.TextBlock();
-  element.text = "Score:";
-  element.height = "20px";
-  element.color = "white";
-  element.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-  element.fontSize = "20";
-  element.left = left;
-  element.top = top;
-  return element;
-}
-
 export function hasVirtualDisplays() {
   return window.navigator.activeVRDisplays;
 }
@@ -50,4 +33,80 @@ export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
     }
   }
   sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
+}
+
+export function buildAnimationIn(
+  name: string,
+  property: string,
+  mesh: BABYLON.Mesh
+) {
+  const frameRate = 10;
+
+  const open = new BABYLON.Animation(
+    name,
+    property,
+    frameRate,
+    BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+
+  var easingFunction = new BABYLON.ElasticEase(1);
+  easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+
+  open.setEasingFunction(easingFunction);
+
+  var keyFrames = [
+    {
+      frame: 0,
+      value: BABYLON.Vector3.Zero()
+    },
+    {
+      frame: frameRate,
+      value: BABYLON.Vector3.One()
+    }
+  ];
+
+  open.setKeys(keyFrames);
+
+  return mesh
+    .getScene()
+    .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
+}
+
+export function buildAnimationOut(
+  name: string,
+  property: string,
+  mesh: BABYLON.Mesh
+) {
+  const frameRate = 10;
+
+  const open = new BABYLON.Animation(
+    name,
+    property,
+    frameRate,
+    BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+
+  var easingFunction = new BABYLON.ElasticEase(1);
+  easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
+
+  open.setEasingFunction(easingFunction);
+
+  var keyFrames = [
+    {
+      frame: 0,
+      value: BABYLON.Vector3.One()
+    },
+    {
+      frame: frameRate,
+      value: BABYLON.Vector3.Zero()
+    }
+  ];
+
+  open.setKeys(keyFrames);
+
+  return mesh
+    .getScene()
+    .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }

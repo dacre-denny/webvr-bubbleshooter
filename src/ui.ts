@@ -39,6 +39,8 @@ export class UIManager {
 
     this.uiSurface.setDirection(direction);
     this.uiSurface.position.copyFrom(position);
+
+    return this;
   }
 
   private clearScreen() {
@@ -69,11 +71,11 @@ export class UIManager {
     }
   }
 
-  public showGameOverScreen() {
-    return this.uiCurrentScreen instanceof GameOver
-      ? this.uiCurrentScreen
-      : this.setScreen(new GameOver());
-  }
+  // public showGameOverScreen() {
+  //   return this.uiCurrentScreen instanceof GameOver
+  //     ? this.uiCurrentScreen
+  //     : this.setScreen(new GameOver());
+  // }
 
   public showStartMenu() {
     return this.uiCurrentScreen instanceof MainMenu
@@ -82,24 +84,6 @@ export class UIManager {
   }
 
   public showHUD() {
-    /*
-    if (this.uiCurrentScreen instanceof GameHUD) {
-      return this.uiCurrentScreen;
-    } else {
-      const scene = this.uiSurface.getScene();
-      const factory = new BubbleFactory(scene);
-
-      const bubble = factory.createBubble();
-      const mesh = bubble.getMesh();
-
-      mesh.position.set(2.5, 0, 2.5);
-
-      this.uiSurface.addChild(mesh);
-
-      return this.setScreen(new GameHUD());
-    }
-    */
-
     return this.uiCurrentScreen instanceof GameHUD
       ? this.uiCurrentScreen
       : this.setScreen(new GameHUD());
