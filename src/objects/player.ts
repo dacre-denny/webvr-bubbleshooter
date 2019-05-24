@@ -20,11 +20,11 @@ export class Player {
     material.disableLighting = true;
     material.emissiveColor = BABYLON.Color3.White();
 
-    var meshTube = BABYLON.MeshBuilder.CreateCylinder(
+    const meshTube = BABYLON.MeshBuilder.CreateCylinder(
       "launcher.tube",
       {
-        height: 0.35,
-        diameter: Bubble.RADIUS * 2 + 0.5,
+        height: 0.75,
+        diameter: Bubble.RADIUS * 2 + 0.35,
         tessellation: 5,
         arc: Math.PI * 2,
         enclose: false
@@ -38,37 +38,24 @@ export class Player {
     meshTube.rotate(BABYLON.Vector3.Left(), Math.PI / 2);
     meshTube.material = material;
 
-    for (let x = 0; x < 3; x++) {
-      //Array of paths to construct tube
+    const meshTubeBase = BABYLON.MeshBuilder.CreateCylinder(
+      "launcher.tube",
+      {
+        height: 0.35,
+        diameter: Bubble.RADIUS * 2 + 0.5,
+        tessellation: 5,
+        arc: Math.PI * 2,
+        enclose: false,
+        diameterTop: 0.5
+      },
+      scene
+    ).convertToFlatShadedMesh();
 
-      var myPath: BABYLON.Vector3[] = [];
+    applyColors(meshTubeBase, BABYLON.Color3.Black());
 
-      let n = 5;
-      for (let i = 0; i <= n; i++) {
-        const p = Math.PI * 0.5 + (Math.PI * 2 * i) / n;
-
-        myPath.push(new BABYLON.Vector3(Math.sin(p), Math.cos(p), 1 + x * 0.5));
-      }
-
-      //Create ribbon with updatable parameter set to true for later changes
-      var tube = BABYLON.MeshBuilder.CreateTube(
-        "tube",
-        {
-          path: myPath,
-          cap: BABYLON.Mesh.NO_CAP,
-          tessellation: 3,
-          radius: 0.1,
-          sideOrientation: BABYLON.Mesh.FRONTSIDE,
-          updatable: true
-        },
-        scene
-      );
-
-      tube.material = material;
-      applyColors(tube, BABYLON.Color3.Black());
-
-      meshTube.addChild(tube);
-    }
+    meshTubeBase.translate(BABYLON.Vector3.Forward(), 1.75);
+    meshTubeBase.rotate(BABYLON.Vector3.Left(), Math.PI / 2);
+    meshTubeBase.material = material;
 
     let meshBase = BABYLON.MeshBuilder.CreateIcoSphere(
       "launcher.base",
@@ -84,11 +71,15 @@ export class Player {
 
     mesh.addChild(meshBase);
     mesh.addChild(meshTube);
+    mesh.addChild(meshTubeBase);
 
     mesh.position.y -= 3;
 
     this.mesh = mesh;
-
+    mesh.onAfterWorldMatrixUpdateObservable.add(() => {
+      meshTube.rotate(BABYLON.Vector3.Up(), Math.PI / 46);
+      meshTubeBase.rotate(BABYLON.Vector3.Up(), Math.PI / -64);
+    });
     return this;
   }
 

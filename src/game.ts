@@ -216,6 +216,7 @@ export class Game {
       ) {
         this.scene.onBeforeRenderObservable.addOnce(() => {
           onDestroyBubble(bubble);
+          this.registerTrigger(onShootBubble);
         });
       }
     };
@@ -225,6 +226,12 @@ export class Game {
         const bubble = bubbleFactory.createBubble();
         bubble.setPosition(this.player.getPosition());
         bubble.setVelocity(this.player.getDirection().scale(Game.SHOOT_POWER));
+        Particles.createShoot(
+          this.scene,
+          this.player.getPosition().add(this.player.getDirection().scale(2)),
+          this.player.getDirection(),
+          bubble.getColor3()
+        );
 
         bubble.getMesh().onAfterWorldMatrixUpdateObservable.add(() => {
           onUpdateBubble(bubble);
