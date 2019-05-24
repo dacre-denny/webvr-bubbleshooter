@@ -3,7 +3,6 @@ import { Bubble } from "./objects/bubble";
 import { BubbleFactory } from "./bubbleFactory";
 import { Player } from "./objects/player";
 import { Level } from "./objects/level";
-import { UIManager } from "./ui";
 import { Particles } from "./objects/particles";
 import { hasVirtualDisplays } from "./utilities";
 import { ActionQueue } from "./objects/queue";
@@ -20,7 +19,6 @@ export class Game {
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
-  private uiManager: UIManager;
   private player: Player;
   private level: Level;
 
@@ -43,7 +41,6 @@ export class Game {
 
     this.level = new Level();
     this.player = new Player();
-    this.uiManager = new UIManager(this.scene);
 
     this.playerAttempts = Game.SHOT_ATTEMPTS;
     this.playerScore = 0;
@@ -138,7 +135,7 @@ export class Game {
     const bubbleFactory = new BubbleFactory(this.scene);
 
     this.level.insertBubbleLayer(bubbleFactory);
-    this.uiManager.showHUD().setScore(this.playerScore);
+    // this.uiManager.showHUD().setScore(this.playerScore);
 
     let shotBubble: Bubble = null;
 
@@ -174,11 +171,11 @@ export class Game {
       if (hasVirtualDisplays() && camera.leftController) {
         const leftController = camera.leftController;
 
-        this.uiManager.updatePlacement(
-          VRHelper.position.add(leftController.position),
-          leftController.getForwardRay().direction,
-          1
-        );
+        // this.uiManager.updatePlacement(
+        //   VRHelper.position.add(leftController.position),
+        //   leftController.getForwardRay().direction,
+        //   1
+        // );
 
         const pickingInfo = this.scene.pickWithRay(
           leftController.getForwardRay(),
@@ -276,7 +273,7 @@ export class Game {
             Particles.createBubblePopPartciles(this.scene, bubble);
 
             this.playerScore += Game.SHOOT_POWER;
-            this.uiManager.showHUD().setScore(this.playerScore);
+            // this.uiManager.showHUD().setScore(this.playerScore);
 
             this.soundExplode.play();
             bubble.dispose();
