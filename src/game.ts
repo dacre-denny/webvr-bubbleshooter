@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { Bubble } from "./objects/bubble";
+import { Bubble, Colors } from "./objects/bubble";
 import { BubbleFactory } from "./bubbleFactory";
 import { Player } from "./objects/player";
 import { Level } from "./objects/level";
@@ -27,8 +27,7 @@ export class Game {
   private soundButton: BABYLON.Sound;
   private soundExplode: BABYLON.Sound;
 
-  private playerAttempts: number;
-  private playerScore: number;
+  private gameScore: number;
 
   constructor(canvasElement: string) {
     const canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -42,9 +41,6 @@ export class Game {
 
     this.level = new Level();
     this.player = new Player();
-
-    this.playerAttempts = Game.SHOT_ATTEMPTS;
-    this.playerScore = 0;
 
     this.soundMusic = new BABYLON.Sound(
       "sound-music",
@@ -131,22 +127,18 @@ export class Game {
   }
 
   private gotoGamePlaying() {
-    this.playerScore = 0;
-    this.playerAttempts = Game.SHOT_ATTEMPTS;
+    this.gameScore = 0;
 
     const bubbleFactory = new BubbleFactory(this.scene);
-
     this.level.insertBubbleLayer(bubbleFactory);
-    // this.uiManager.showHUD().setScore(this.playerScore);
 
+    let shotAttempts = Game.SHOT_ATTEMPTS;
     let shotBubble: Bubble = null;
-
-    const hud = new GameHUD();
-    hud.create(this.scene);
 
     const VRHelper = this.VRHelper;
     const camera = VRHelper.webVRCamera;
     const burstQue = new ActionQueue();
+    const hud = new GameHUD();
 
     const canShootBubble = () => {
       if (shotBubble !== null) {
@@ -263,29 +255,34 @@ export class Game {
 
       if (bubbles.length <= 1) {
         // If not bubbles to burst, then decrement shot attempts
-        this.playerAttempts--;
+        shotAttempts--;
 
         // If no shots remaining then add bubble layer to level and
         // reset shot attempts
-        if (this.playerAttempts <= 0) {
+        if (shotAttempts <= 0) {
           this.level.insertBubbleLayer(bubbleFactory);
-          this.playerAttempts = Game.SHOT_ATTEMPTS;
+          shotAttempts = Game.SHOT_ATTEMPTS;
         }
+
+        hud.setLevel((100 * shotAttempts) / Game.SHOT_ATTEMPTS);
       } else {
         // If bubbles to burst have been found, add to the burst queue
         bubbles.forEach(bubble =>
           burstQue.add(() => {
             Particles.createBubblePopPartciles(this.scene, bubble);
 
-            this.playerScore += Game.SHOOT_POWER;
-            // this.uiManager.showHUD().setScore(this.playerScore);
+            this.gameScore += Game.SHOOT_POWER;
 
+            hud.setScore(this.gameScore);
+            hud.setBubble(Colors.BLUE);
+            /*
             this.soundExplode.play();
+            */
             bubble.dispose();
           })
         );
 
-        this.playerAttempts = Game.SHOT_ATTEMPTS;
+        shotAttempts = Game.SHOT_ATTEMPTS;
       }
 
       if (this.level.getBubbles().some(Level.belowBaseline)) {
@@ -310,10 +307,13 @@ export class Game {
       window.addEventListener("click", onShootBubble);
       window.addEventListener("mousemove", onUpdatePlayer);
     }
+
+    hud.create(this.scene);
+    hud.setLevel(100);
   }
   private gotoGameOver() {
     const gameOverScreen = new GameOver();
-    gameOverScreen.create(this.scene, this.playerScore);
+    gameOverScreen.create(this.scene, this.gameScore);
 
     const confetti = Particles.createConfetti(
       this.scene,

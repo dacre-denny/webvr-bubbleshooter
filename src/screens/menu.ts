@@ -8,7 +8,7 @@ import {
 } from "../utilities";
 import { Theme, Assets } from "../assets";
 
-export class MainMenu extends GUI.StackPanel {
+export class MainMenu {
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
 
@@ -55,22 +55,26 @@ export class MainMenu extends GUI.StackPanel {
     var panel = new GUI.StackPanel("panel");
     panel.heightInPixels = 300;
 
-    var title = new GUI.Image("game-title", Assets.GUI_GAMEMENU_MEADING);
-    title.left = 0;
-    title.top = 0;
-    title.heightInPixels = 135;
-    title.widthInPixels = 455;
+    {
+      var title = new GUI.Image("game-title", Assets.GUI_GAMEMENU_MEADING);
+      title.left = 0;
+      title.top = 0;
+      title.heightInPixels = 135;
+      title.widthInPixels = 455;
 
-    panel.addControl(title);
+      panel.addControl(title);
+    }
+
     panel.addControl(
       createTextBlock(`Pull trigger to play!`, 20, Theme.COLOR_WHITE)
     );
+    {
+      const glass = createGlass();
+      glass.height = "70%";
+      glass.paddingTop = "30%";
 
-    const glass = createGlass();
-    glass.height = "70%";
-    glass.paddingTop = "30%";
-
-    panel.addControl(glass);
+      panel.addControl(glass);
+    }
 
     texture.addControl(panel);
 

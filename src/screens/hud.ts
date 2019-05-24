@@ -1,22 +1,21 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
-import { Bubble, Colors } from "../objects/bubble";
+import { Theme } from "../assets";
+import { Colors } from "../objects/bubble";
 import {
-  createAnimationExit,
   createAnimationEnter,
-  createTextBlock,
-  createGlass
+  createAnimationExit,
+  createGlass,
+  createTextBlock
 } from "../utilities";
-import { Assets, Theme } from "../assets";
-import { BubbleFactory } from "../bubbleFactory";
 
-export class GameHUD extends GUI.StackPanel {
+export class GameHUD {
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
 
-  private levelProgress: GUI.Rectangle;
+  private rectAttempts: GUI.Rectangle;
   private bubble: BABYLON.Mesh;
-  private score: GUI.TextBlock;
+  private textScore: GUI.TextBlock;
 
   public close() {
     if (!this.plane) {
@@ -60,48 +59,49 @@ export class GameHUD extends GUI.StackPanel {
 
     var panel = new GUI.StackPanel("panel");
     panel.heightInPixels = 100;
-
-    const glass = createGlass();
-    glass.height = "100%";
-    glass.paddingTop = "0%";
-    glass.widthInPixels = 275;
-
-    panel.addControl(glass);
-
-    {
-      const textLabel = createTextBlock(``, 40, Theme.COLOR_WHITE);
-      textLabel.heightInPixels = 65;
-      textLabel.width = "30%";
-      textLabel.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-      panel.addControl(textLabel);
-
-      this.score = textLabel;
-    }
-
-    {
-      const wrap = new GUI.Rectangle();
-      wrap.heightInPixels = 20;
-      wrap.width = `30%`;
-      wrap.cornerRadius = 100;
-      wrap.background = Theme.COLOR_WHITE + "44";
-      wrap.thickness = 0;
-
-      panel.addControl(wrap);
-
-      const inner = new GUI.Rectangle();
-      inner.height = `100%`;
-      inner.width = `50%`;
-      inner.cornerRadius = 100;
-      inner.background = Theme.COLOR_BLUE;
-      inner.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-      inner.thickness = 0;
-
-      wrap.addControl(inner);
-
-      this.levelProgress = inner;
-    }
-
     texture.addControl(panel);
+
+    {
+      const glass = createGlass();
+      glass.height = "100%";
+      glass.paddingTop = "0%";
+      glass.widthInPixels = 275;
+
+      panel.addControl(glass);
+    }
+
+    {
+      const textScore = createTextBlock(``, 40, Theme.COLOR_WHITE);
+      textScore.heightInPixels = 65;
+      textScore.width = "30%";
+      textScore.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+
+      panel.addControl(textScore);
+
+      this.textScore = textScore;
+    }
+
+    {
+      const rectWrap = new GUI.Rectangle();
+      rectWrap.heightInPixels = 20;
+      rectWrap.width = `30%`;
+      rectWrap.cornerRadius = 100;
+      rectWrap.background = Theme.COLOR_WHITE + "44";
+      rectWrap.thickness = 0;
+
+      const rectAttempts = new GUI.Rectangle();
+      rectAttempts.height = `100%`;
+      rectAttempts.width = `0%`;
+      rectAttempts.cornerRadius = 100;
+      rectAttempts.background = Theme.COLOR_BLUE;
+      rectAttempts.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+      rectAttempts.thickness = 0;
+
+      rectWrap.addControl(rectAttempts);
+      panel.addControl(rectWrap);
+
+      this.rectAttempts = rectAttempts;
+    }
 
     const position = new BABYLON.Vector3()
       .addInPlace(BABYLON.Vector3.Up())
@@ -114,12 +114,13 @@ export class GameHUD extends GUI.StackPanel {
 
     this.texture = texture;
     this.plane = plane;
+
     this.setScore(10);
     this.setBubble(Colors.BLUE);
   }
 
   public setScore(score: number) {
-    if (!this.score) {
+    if (!this.textScore) {
       return;
     }
 
@@ -130,14 +131,12 @@ export class GameHUD extends GUI.StackPanel {
         score,
         displayValue + 1 + Math.round((score - displayValue) / 50)
       );
-      this.score.text = `${displayValue}`;
+      this.textScore.text = `${displayValue}`;
 
       if (displayValue >= score) {
         this.plane.onBeforeDrawObservable.remove(counter);
       }
     });
-
-    //this.score.text = `${score}`;
   }
 
   public setBubble(color: Colors) {
@@ -145,7 +144,7 @@ export class GameHUD extends GUI.StackPanel {
       return;
     }
 
-    const add = () => {
+    const animateInsertBubble = () => {
       var sphere = BABYLON.MeshBuilder.CreateSphere(
         "sphere",
         {
@@ -155,7 +154,8 @@ export class GameHUD extends GUI.StackPanel {
         this.plane.getScene()
       );
 
-      sphere.position.set(0.65, 1.125, 6);
+      sphere.scaling.setAll(0);
+      sphere.position.set(0.65, 1.125, 5.9);
       this.plane.addChild(sphere);
 
       sphere.onBeforeDrawObservable.add(() => {
@@ -170,6 +170,8 @@ export class GameHUD extends GUI.StackPanel {
       });
 
       createAnimationEnter("scaling", sphere);
+
+      this.bubble = sphere;
     };
 
     if (this.bubble) {
@@ -178,17 +180,19 @@ export class GameHUD extends GUI.StackPanel {
         this.bubble
       ).onAnimationEndObservable.addOnce(() => {
         this.plane.removeChild(this.bubble);
-        add();
+        this.bubble.dispose();
+        this.bubble = null;
+        animateInsertBubble();
       });
     } else {
-      add();
+      animateInsertBubble();
     }
   }
 
   public setLevel(percent: number) {
-    if (!this.levelProgress) {
+    if (!this.rectAttempts) {
       return;
     }
-    this.levelProgress.width = `${percent}%`;
+    this.rectAttempts.width = `${Math.max(0, Math.min(100, percent))}%`;
   }
 }
