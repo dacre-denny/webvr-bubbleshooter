@@ -1,5 +1,6 @@
 export const enum Assets {
-  GUI_GAMEOVER_HEADING = "./images/game-end.png"
+  GUI_GAMEOVER_HEADING = "./images/game-end.png",
+  GUI_GAMEMENU_MEADING = "./images/game-title.png"
 }
 
 export const enum Theme {

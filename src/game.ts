@@ -9,6 +9,7 @@ import { hasVirtualDisplays } from "./utilities";
 import { ActionQueue } from "./objects/queue";
 import { GameOver } from "./screens/gameover";
 import { AssetsManager } from "babylonjs";
+import { MainMenu } from "./screens/menu";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -90,7 +91,7 @@ export class Game {
       this.scene.render();
     });
 
-    this.gotoGameOver();
+    this.gotoMainMenu();
   }
 
   private registerTrigger(callback: () => void) {
@@ -116,21 +117,18 @@ export class Game {
   private gotoMainMenu() {
     this.level.reset();
 
-    const confetti = Particles.createConfetti(
-      this.scene,
-      new BABYLON.Vector3(0, 15, 0)
-    );
-
     this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
-    this.uiManager
-      .showStartMenu()
-      .getStartButton()
-      .onPointerClickObservable.addOnce(() => {
-        confetti.stop();
-        this.soundButton.play();
+    const menuScreen = new MainMenu();
+    menuScreen.create(this.scene);
+
+    this.registerTrigger(() => {
+      this.soundButton.play();
+
+      menuScreen.close().add(() => {
         this.onGamePlaying();
       });
+    });
   }
 
   private onGamePlaying() {
@@ -310,7 +308,8 @@ export class Game {
     }
   }
   private gotoGameOver() {
-    const gameOverScreen = new GameOver(this.scene, 1000 + this.playerScore);
+    const gameOverScreen = new GameOver();
+    gameOverScreen.create(this.scene, this.playerScore);
 
     const confetti = Particles.createConfetti(
       this.scene,

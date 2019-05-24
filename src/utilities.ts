@@ -1,6 +1,7 @@
 import * as BABYLON from "babylonjs";
 import { Colors } from "./objects/bubble";
 import * as GUI from "babylonjs-gui";
+import { Theme } from "./assets";
 
 let n = 0;
 
@@ -35,6 +36,34 @@ export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
   sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
 }
 
+export function createGlass() {
+  const glass = new GUI.Rectangle("glass");
+  glass.zIndex = -1;
+  glass.cornerRadius = 20;
+  glass.height = `100%`;
+  glass.widthInPixels = 400;
+  glass.background = Theme.COLOR_WHITE + "33";
+  glass.thickness = 0;
+
+  return glass;
+}
+
+export function createTextBlock(
+  text: string,
+  size: number,
+  color: string = "white"
+) {
+  const textBlock = new GUI.TextBlock();
+  textBlock.text = text;
+  textBlock.fontSize = size;
+  textBlock.heightInPixels = size + 10;
+  textBlock.paddingBottomInPixels = 5;
+  textBlock.paddingTopInPixels = 5;
+  textBlock.color = color;
+  textBlock.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+
+  return textBlock;
+}
 export function createAnimationEnter(property: string, mesh: BABYLON.Mesh) {
   const frameRate = 10;
 

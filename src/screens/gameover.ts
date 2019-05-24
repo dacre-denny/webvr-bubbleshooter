@@ -1,27 +1,41 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
-import { AssetsManager, Color3 } from "babylonjs";
-import { createAnimationEnter, createAnimationExit } from "../utilities";
 import { Assets, Theme } from "../assets";
-
-function createTextBlock(text: string, size: number, color: string = "white") {
-  const textBlock = new GUI.TextBlock();
-  textBlock.text = text;
-  textBlock.fontSize = size;
-  textBlock.heightInPixels = size + 10;
-  textBlock.paddingBottomInPixels = 5;
-  textBlock.paddingTopInPixels = 5;
-  textBlock.color = color;
-  textBlock.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-
-  return textBlock;
-}
+import {
+  createAnimationEnter,
+  createAnimationExit,
+  createTextBlock,
+  createGlass
+} from "../utilities";
 
 export class GameOver {
-  private gui: GUI.AdvancedDynamicTexture;
+  private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
 
-  private create(scene: BABYLON.Scene) {
+  public close() {
+    if (!this.plane) {
+      return;
+    }
+
+    const exitAnimationEnd = createAnimationExit("scaling", this.plane)
+      .onAnimationEndObservable;
+
+    exitAnimationEnd.add(() => {
+      this.texture.dispose();
+      this.plane.dispose();
+
+      this.texture = null;
+      this.plane = null;
+    });
+
+    return exitAnimationEnd;
+  }
+
+  public create(scene: BABYLON.Scene, score: number) {
+    if (this.plane) {
+      return;
+    }
+
     const plane = BABYLON.MeshBuilder.CreatePlane(
       "menu",
       {
@@ -38,43 +52,8 @@ export class GameOver {
       true
     );
 
-    this.gui = texture;
-    this.plane = plane;
-  }
-
-  public close() {
-    if (!this.plane) {
-      return
-    }
-
-    const exitAnimationEnd = createAnimationExit("scaling", this.plane)
-      .onAnimationEndObservable;
-
-    exitAnimationEnd.add(() => {
-      this.gui.dispose();
-      this.plane.dispose();
-
-      this.gui = null;
-      this.plane = null;
-    });
-
-    return exitAnimationEnd;
-  }
-
-  constructor(scene: BABYLON.Scene, score: number) {
-    this.create(scene);
-
     var panel = new GUI.StackPanel("panel");
     panel.heightInPixels = 300;
-
-    const glass = new GUI.Rectangle("glass");
-    glass.zIndex = -1;
-    glass.cornerRadius = 20;
-    glass.height = `90%`;
-    glass.widthInPixels = 400;
-    glass.background = Theme.COLOR_WHITE + "33";
-    glass.thickness = 10;
-    glass.paddingTop = `15%`;
 
     var title = new GUI.Image("game-title", Assets.GUI_GAMEOVER_HEADING);
     title.left = -100;
@@ -82,47 +61,49 @@ export class GameOver {
     title.heightInPixels = 100;
     title.widthInPixels = 270;
 
-    const textScore = createTextBlock(`Your scope`, 20, Theme.COLOR_WHITE);
     const textScoreNumber = createTextBlock(`${0}`, 60, Theme.COLOR_WHITE);
-    const textInstruction = createTextBlock(
-      `Pull trigger to continue`,
-      20,
-      Theme.COLOR_WHITE
-    );
 
     panel.addControl(title);
-    panel.addControl(textScore);
+    panel.addControl(createTextBlock(`Your scope`, 20, Theme.COLOR_WHITE));
     panel.addControl(textScoreNumber);
-    panel.addControl(textInstruction);
+    panel.addControl(
+      createTextBlock(`Pull trigger to continue`, 20, Theme.COLOR_WHITE)
+    );
+
+    const glass = createGlass();
+    glass.paddingTop = "15%";
+    glass.height = "90%";
     panel.addControl(glass);
 
-    this.gui.addControl(panel);
+    texture.addControl(panel);
 
     const position = new BABYLON.Vector3()
       .addInPlace(BABYLON.Vector3.Up())
       .addInPlace(BABYLON.Vector3.Forward().scale(6));
 
-    this.plane.setDirection(BABYLON.Vector3.Forward());
-    this.plane.position.copyFrom(position);
+    plane.setDirection(BABYLON.Vector3.Forward());
+    plane.position.copyFrom(position);
 
-    createAnimationEnter(
-      "scaling",
-      this.plane
-    ).onAnimationEndObservable.addOnce(() => {
-      let displayScore = 0;
+    createAnimationEnter("scaling", plane).onAnimationEndObservable.addOnce(
+      () => {
+        let displayScore = 0;
 
-      this.plane.onBeforeDrawObservable.add(() => {
-        displayScore = Math.min(
-          score,
-          displayScore + 1 + Math.round((score - displayScore) / 50)
-        );
+        plane.onBeforeDrawObservable.add(() => {
+          displayScore = Math.min(
+            score,
+            displayScore + 1 + Math.round((score - displayScore) / 50)
+          );
 
-        textScoreNumber.text = `${displayScore}`;
+          textScoreNumber.text = `${displayScore}`;
 
-        if (displayScore >= score) {
-          this.plane.onBeforeDrawObservable.clear();
-        }
-      });
-    });
+          if (displayScore >= score) {
+            plane.onBeforeDrawObservable.clear();
+          }
+        });
+      }
+    );
+
+    this.texture = texture;
+    this.plane = plane;
   }
 }
