@@ -36,3 +36,30 @@ export class ActionQueue {
     return !!this.timer;
   }
 }
+
+export class ActionRandom {
+  timer: number = null;
+  action: Action = null;
+
+  private iterate() {
+    this.cancel();
+
+    this.timer = setTimeout(() => {
+      if (this.action) {
+        this.action();
+      }
+      this.iterate();
+    }, 3000 * (Math.random() * 0.5 + 0.5));
+  }
+
+  public callback(callback: Action) {
+    this.action = callback;
+    this.iterate();
+  }
+
+  public cancel() {
+    if (this.timer !== null) {
+      clearTimeout(this.timer);
+    }
+  }
+}

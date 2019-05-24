@@ -64,6 +64,44 @@ export function createTextBlock(
 
   return textBlock;
 }
+export function createAnimationTranslate(
+  property: string,
+  destination: BABYLON.Vector3,
+  mesh: BABYLON.AbstractMesh
+) {
+  const frameRate = 10;
+
+  const open = new BABYLON.Animation(
+    "animation-enter",
+    property,
+    frameRate,
+    BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+
+  var easingFunction = new BABYLON.ElasticEase(1);
+  easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+
+  open.setEasingFunction(easingFunction);
+
+  var keyFrames = [
+    {
+      frame: 0,
+      value: mesh.position
+    },
+    {
+      frame: frameRate,
+      value: destination
+    }
+  ];
+
+  open.setKeys(keyFrames);
+
+  return mesh
+    .getScene()
+    .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
+}
+
 export function createAnimationEnter(
   property: string,
   mesh: BABYLON.AbstractMesh
@@ -112,7 +150,7 @@ export function createAnimationExit(
     property,
     frameRate,
     BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-    BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
   );
 
   var easingFunction = new BABYLON.ElasticEase(1);
@@ -135,4 +173,41 @@ export function createAnimationExit(
   const scene = mesh.getScene();
 
   return scene.beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
+}
+
+export function createAnimationScale(
+  property: string,
+  mesh: BABYLON.AbstractMesh
+) {
+  const frameRate = 10;
+
+  const open = new BABYLON.Animation(
+    "animation-scale",
+    property,
+    frameRate,
+    BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+
+  var easingFunction = new BABYLON.ElasticEase(1);
+  easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+
+  open.setEasingFunction(easingFunction);
+
+  var keyFrames = [
+    {
+      frame: 0,
+      value: 1.25
+    },
+    {
+      frame: frameRate,
+      value: 1
+    }
+  ];
+
+  open.setKeys(keyFrames);
+
+  return mesh
+    .getScene()
+    .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }

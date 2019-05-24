@@ -1,7 +1,14 @@
 import * as BABYLON from "babylonjs";
-import { Bubble } from "./bubble";
 import { BubbleFactory } from "../bubbleFactory";
-import { clamp, applyColors } from "../utilities";
+import {
+  applyColors,
+  clamp,
+  createAnimationTranslate,
+  createAnimationEnter,
+  createAnimationScale
+} from "../utilities";
+import { Bubble } from "./bubble";
+import { ActionRandom } from "./queue";
 
 const LEVEL_WIDTH = 4;
 const LEVEL_DEPTH = 4;
@@ -22,6 +29,8 @@ export class Level {
   private lattice: Map<string, Bubble>;
   private level: BABYLON.Mesh;
   private top: BABYLON.Mesh;
+
+  private animate: ActionRandom;
 
   public static belowBaseline(bubble: Bubble): boolean {
     return bubble.getMesh().position.y <= Level.BASELINE;
@@ -224,6 +233,14 @@ export class Level {
     (level as any).wall = true;
 
     this.level = level;
+
+    this.animate = new ActionRandom();
+    this.animate.callback(() => {
+      const bubbles = this.getBubbles();
+      const ridx = Math.floor(Math.random() * bubbles.length);
+      const bubble = bubbles[ridx];
+      createAnimationScale("scalingDeterminant", bubble.getMesh());
+    });
   }
 
   public reset() {
@@ -355,15 +372,31 @@ export class Level {
   }
 
   public insertBubbleLayer(bubbleFactory: BubbleFactory) {
-    function place(bubble: Bubble, x: number, y: number, z: number) {
+    function place(
+      bubble: Bubble,
+      x: number,
+      y: number,
+      z: number,
+      animate: boolean
+    ) {
       if (!bubble) {
         return;
       }
-      const { position } = bubble.getMesh();
+      const mesh = bubble.getMesh();
 
-      position.x = x;
-      position.z = z;
-      position.y = y;
+      if (animate) {
+        createAnimationTranslate(
+          "position",
+          new BABYLON.Vector3(x, y, z),
+          mesh
+        );
+      } else {
+        const { position } = mesh;
+
+        position.x = x;
+        position.z = z;
+        position.y = y;
+      }
     }
 
     // Clear any bubbles at base layer
@@ -373,7 +406,6 @@ export class Level {
         const bubble = this.lattice.get(key);
 
         if (bubble) {
-          console.log(x);
           bubble.burst();
           this.lattice.delete(key);
         }
@@ -389,7 +421,7 @@ export class Level {
 
           const bubble = this.lattice.get(keySrc);
           if (bubble) {
-            place(bubble, x, y, z);
+            place(bubble, x, y, z, true);
             this.lattice.set(keyDest, bubble);
           }
           this.lattice.set(keySrc, null);
@@ -406,7 +438,7 @@ export class Level {
         bubble.getImposter().setMass(0);
 
         this.lattice.set(key, bubble);
-        place(bubble, x, LEVEL_LAYERS, z);
+        place(bubble, x, LEVEL_LAYERS, z, false);
       }
     }
   }
