@@ -6,10 +6,10 @@ import { Level } from "./objects/level";
 import { Particles } from "./objects/particles";
 import { hasVirtualDisplays } from "./utilities";
 import { ActionQueue } from "./objects/queue";
-import { GameOver } from "./screens/gameover";
+import { GameOver } from "./ui/gameover";
 import { AssetsManager } from "babylonjs";
-import { MainMenu } from "./screens/menu";
-import { GameHUD } from "./screens/hud";
+import { MainMenu } from "./ui/menu";
+import { GameHUD } from "./ui/hud";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
