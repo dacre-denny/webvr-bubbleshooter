@@ -2,7 +2,11 @@ import * as BABYLON from "babylonjs";
 import { Bubble } from "./bubble";
 
 export class Particles {
-  public static createBubblePopPartciles(scene: BABYLON.Scene, bubble: Bubble) {
+  public static createBubblePopPartciles(
+    scene: BABYLON.Scene,
+    position: BABYLON.Vector3,
+    color: BABYLON.Color3
+  ) {
     const particleSystem = new BABYLON.ParticleSystem(
       "particles-bubble",
       45,
@@ -43,17 +47,17 @@ export class Particles {
 
     particleSystem.maxLifeTime = 0.75;
     particleSystem.minLifeTime = 0.5;
-    particleSystem.emitter = bubble.getPosition();
+    particleSystem.emitter = position;
     particleSystem.disposeOnStop = true;
 
     particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
     particleSystem.textureMask = BABYLON.Color4.FromInts(255, 255, 255, 255);
 
-    particleSystem.color1 = BABYLON.Color4.FromColor3(bubble.getColor3());
+    particleSystem.color1 = BABYLON.Color4.FromColor3(color);
     particleSystem.color2 = BABYLON.Color4.FromColor3(
-      bubble.getColor3().add(BABYLON.Color3.White().scale(0.5))
+      color.add(BABYLON.Color3.White().scale(0.5))
     );
-    particleSystem.colorDead = BABYLON.Color4.FromColor3(bubble.getColor3(), 0);
+    particleSystem.colorDead = BABYLON.Color4.FromColor3(color, 0);
 
     const onRender = () => {
       if (particleSystem.particles.length > 0) {

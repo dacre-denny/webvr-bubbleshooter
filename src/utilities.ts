@@ -64,7 +64,10 @@ export function createTextBlock(
 
   return textBlock;
 }
-export function createAnimationEnter(property: string, mesh: BABYLON.Mesh) {
+export function createAnimationEnter(
+  property: string,
+  mesh: BABYLON.AbstractMesh
+) {
   const frameRate = 10;
 
   const open = new BABYLON.Animation(
@@ -98,7 +101,10 @@ export function createAnimationEnter(property: string, mesh: BABYLON.Mesh) {
     .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }
 
-export function createAnimationExit(property: string, mesh: BABYLON.Mesh) {
+export function createAnimationExit(
+  property: string,
+  mesh: BABYLON.AbstractMesh
+) {
   const frameRate = 10;
 
   const open = new BABYLON.Animation(
@@ -106,7 +112,7 @@ export function createAnimationExit(property: string, mesh: BABYLON.Mesh) {
     property,
     frameRate,
     BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
   );
 
   var easingFunction = new BABYLON.ElasticEase(1);
@@ -126,8 +132,7 @@ export function createAnimationExit(property: string, mesh: BABYLON.Mesh) {
   ];
 
   open.setKeys(keyFrames);
+  const scene = mesh.getScene();
 
-  return mesh
-    .getScene()
-    .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
+  return scene.beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }

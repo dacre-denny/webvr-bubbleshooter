@@ -1,5 +1,6 @@
 import * as BABYLON from "babylonjs";
 import { Particles } from "./particles";
+import { createAnimationExit } from "../utilities";
 
 export const enum Colors {
   RED,
@@ -29,20 +30,6 @@ export class Bubble {
   public static isBubble(mesh: BABYLON.AbstractMesh): boolean {
     return !!(mesh as any).bubble;
   }
-
-  // public static xburst(bubble: Bubble) {
-  //   if (bubble.getMesh()) {
-  //     const burst = Particles.createBubblePopPartciles(
-  //       bubble.getMesh().getScene(),
-  //       bubble.getPosition()
-  //     );
-  //     burst.start();
-  //     setTimeout(() => {
-  //       burst.stop();
-  //     }, 10);
-  //     bubble.dispose();
-  //   }
-  // }
 
   constructor(mesh: BABYLON.InstancedMesh, color: Colors) {
     mesh.physicsImpostor = new BABYLON.PhysicsImpostor(
@@ -97,12 +84,31 @@ export class Bubble {
     return this.mesh;
   }
 
-  public dispose() {
+  public burst() {
     if (this.mesh) {
-      this.mesh.physicsImpostor.dispose();
-      this.mesh.dispose();
+      const position = this.getPosition();
+      const color = this.getColor3();
 
+      const { mesh } = this;
       this.mesh = null;
+
+      mesh.physicsImpostor.dispose();
+      mesh.physicsImpostor = null;
+      mesh.onAfterWorldMatrixUpdateObservable.clear();
+
+      // debugger;
+      mesh.getScene().onBeforeRenderObservable.addOnce(() => {
+        createAnimationExit("scaling", mesh).onAnimationEndObservable.addOnce(
+          () => {
+            Particles.createBubblePopPartciles(
+              mesh.getScene(),
+              position,
+              color
+            );
+            mesh.dispose();
+          }
+        );
+      });
     }
   }
 }

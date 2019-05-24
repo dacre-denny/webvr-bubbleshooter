@@ -48,7 +48,7 @@ export class Level {
 
     for (const bubble of this.lattice.values()) {
       if (bubble) {
-        bubble.dispose();
+        bubble.burst();
       }
     }
 
@@ -229,7 +229,7 @@ export class Level {
   public reset() {
     for (const [key, bubble] of this.lattice.entries()) {
       if (bubble) {
-        bubble.dispose();
+        bubble.burst();
       }
     }
 
@@ -374,7 +374,7 @@ export class Level {
 
         if (bubble) {
           console.log(x);
-          bubble.dispose();
+          bubble.burst();
           this.lattice.delete(key);
         }
       }

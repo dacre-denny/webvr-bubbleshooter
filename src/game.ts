@@ -4,7 +4,7 @@ import { BubbleFactory } from "./bubbleFactory";
 import { Player } from "./objects/player";
 import { Level } from "./objects/level";
 import { Particles } from "./objects/particles";
-import { hasVirtualDisplays } from "./utilities";
+import { hasVirtualDisplays, createAnimationExit } from "./utilities";
 import { ActionQueue } from "./objects/queue";
 import { GameOver } from "./ui/gameover";
 import { AssetsManager } from "babylonjs";
@@ -152,14 +152,7 @@ export class Game {
 
     const onCleanUp = () => {
       // Clean up event binding
-      if (hasVirtualDisplays()) {
-        const camera = this.VRHelper.webVRCamera;
-        camera.onAfterCheckInputsObservable.clear();
-        if (camera.leftController) {
-          camera.leftController.onTriggerStateChangedObservable.clear();
-        }
-      } else {
-        window.removeEventListener("click", onShootBubble);
+      if (!hasVirtualDisplays()) {
         window.removeEventListener("mousemove", onUpdatePlayer);
       }
     };
@@ -211,7 +204,7 @@ export class Game {
       }
 
       bubble.getMesh().onAfterWorldMatrixUpdateObservable.clear();
-      bubble.dispose();
+      bubble.burst();
     };
 
     const onUpdateBubble = (bubble: Bubble) => {
@@ -269,8 +262,6 @@ export class Game {
         // If bubbles to burst have been found, add to the burst queue
         bubbles.forEach(bubble =>
           burstQue.add(() => {
-            Particles.createBubblePopPartciles(this.scene, bubble);
-
             this.gameScore += Game.SHOOT_POWER;
 
             hud.setScore(this.gameScore);
@@ -278,7 +269,9 @@ export class Game {
             /*
             this.soundExplode.play();
             */
-            bubble.dispose();
+
+            onDestroyBubble(bubble);
+            //this.scene.
           })
         );
 
@@ -292,25 +285,22 @@ export class Game {
           // Game over condition reached
           this.gotoGameOver();
         });
+      } else {
+        this.registerTrigger(onShootBubble);
       }
     };
 
-    if (hasVirtualDisplays()) {
-      if (camera.leftController) {
-        camera.leftController.onTriggerStateChangedObservable.add(eventData => {
-          if (eventData.value === 1) {
-            onShootBubble();
-          }
-        });
-      }
-    } else {
-      window.addEventListener("click", onShootBubble);
+    if (!hasVirtualDisplays()) {
+      VRHelper.currentVRCamera.position.set(0, 0, -15);
       window.addEventListener("mousemove", onUpdatePlayer);
     }
+
+    this.registerTrigger(onShootBubble);
 
     hud.create(this.scene);
     hud.setLevel(100);
   }
+
   private gotoGameOver() {
     const gameOverScreen = new GameOver();
     gameOverScreen.create(this.scene, this.gameScore);
