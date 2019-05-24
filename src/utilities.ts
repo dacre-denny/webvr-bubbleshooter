@@ -35,15 +35,11 @@ export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
   sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
 }
 
-export function buildAnimationIn(
-  name: string,
-  property: string,
-  mesh: BABYLON.Mesh
-) {
+export function createAnimationEnter(property: string, mesh: BABYLON.Mesh) {
   const frameRate = 10;
 
   const open = new BABYLON.Animation(
-    name,
+    "animation-enter",
     property,
     frameRate,
     BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
@@ -73,15 +69,11 @@ export function buildAnimationIn(
     .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }
 
-export function buildAnimationOut(
-  name: string,
-  property: string,
-  mesh: BABYLON.Mesh
-) {
+export function createAnimationExit(property: string, mesh: BABYLON.Mesh) {
   const frameRate = 10;
 
   const open = new BABYLON.Animation(
-    name,
+    "animation-exit",
     property,
     frameRate,
     BABYLON.Animation.ANIMATIONTYPE_VECTOR3,

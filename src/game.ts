@@ -90,10 +90,30 @@ export class Game {
       this.scene.render();
     });
 
-    this.onGameOver();
+    this.gotoGameOver();
   }
 
-  private onMainMenu() {
+  private registerTrigger(callback: () => void) {
+    if (hasVirtualDisplays()) {
+      const { VRHelper } = this;
+      const camera = VRHelper.webVRCamera;
+      camera.leftController.onTriggerStateChangedObservable.add(eventData => {
+        if (eventData.value === 1) {
+          camera.leftController.onTriggerStateChangedObservable.clear();
+          callback();
+        }
+      });
+    } else {
+      const wrapper = () => {
+        window.removeEventListener("click", wrapper);
+        callback();
+      };
+
+      window.addEventListener("click", wrapper);
+    }
+  }
+
+  private gotoMainMenu() {
     this.level.reset();
 
     const confetti = Particles.createConfetti(
@@ -272,7 +292,7 @@ export class Game {
         onCleanUp();
 
         // Game over condition reached
-        this.onGameOver();
+        this.gotoGameOver();
       }
     };
 
@@ -289,41 +309,20 @@ export class Game {
       window.addEventListener("mousemove", onUpdatePlayer);
     }
   }
+  private gotoGameOver() {
+    const gameOverScreen = new GameOver(this.scene, 1000 + this.playerScore);
 
-  private registerTrigger(callback: () => void) {
-    if (hasVirtualDisplays()) {
-      const { VRHelper } = this;
-      const camera = VRHelper.webVRCamera;
-      camera.leftController.onTriggerStateChangedObservable.add(eventData => {
-        if (eventData.value === 1) {
-          camera.leftController.onTriggerStateChangedObservable.clear();
-          callback();
-        }
-      });
-    } else {
-      const wrapper = () => {
-        window.removeEventListener("click", wrapper);
-        callback();
-      };
-
-      window.addEventListener("click", wrapper);
-    }
-  }
-
-  private onGameOver() {
-    const gameOver = new GameOver(this.scene);
-
-    const particles = Particles.createConfetti(
+    const confetti = Particles.createConfetti(
       this.scene,
       new BABYLON.Vector3(0, 15, 0)
     );
 
     this.registerTrigger(() => {
       this.soundButton.play();
-      gameOver.close().add(() => {
-        alert(1);
-        particles.stop();
-        this.onMainMenu();
+
+      gameOverScreen.close().add(() => {
+        confetti.stop();
+        this.gotoMainMenu();
       });
     });
   }

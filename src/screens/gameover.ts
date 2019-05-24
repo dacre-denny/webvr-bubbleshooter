@@ -1,24 +1,25 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { AssetsManager, Color3 } from "babylonjs";
-import { buildAnimationIn, buildAnimationOut } from "../utilities";
+import { createAnimationEnter, createAnimationExit } from "../utilities";
+import { Assets, Theme } from "../assets";
 
-function large(text: string, size: number) {
+function createTextBlock(text: string, size: number, color: string = "white") {
   const textBlock = new GUI.TextBlock();
   textBlock.text = text;
   textBlock.fontSize = size;
   textBlock.heightInPixels = size + 10;
   textBlock.paddingBottomInPixels = 5;
   textBlock.paddingTopInPixels = 5;
-  textBlock.color = "white";
+  textBlock.color = color;
   textBlock.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
 
   return textBlock;
 }
 
 export class GameOver {
-  private uiTexture: GUI.AdvancedDynamicTexture;
-  private uiSurface: BABYLON.Mesh;
+  private gui: GUI.AdvancedDynamicTexture;
+  private plane: BABYLON.Mesh;
 
   private create(scene: BABYLON.Scene) {
     const plane = BABYLON.MeshBuilder.CreatePlane(
@@ -30,64 +31,98 @@ export class GameOver {
       scene
     );
     plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
-    const gui = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 800, 800, true);
+    const texture = GUI.AdvancedDynamicTexture.CreateForMesh(
+      plane,
+      800,
+      800,
+      true
+    );
 
-    this.uiTexture = gui;
-    this.uiSurface = plane;
+    this.gui = texture;
+    this.plane = plane;
   }
 
   public close() {
-    const o = buildAnimationOut("x", "scaling", this.uiSurface)
+    if (!this.plane) {
+      return
+    }
+
+    const exitAnimationEnd = createAnimationExit("scaling", this.plane)
       .onAnimationEndObservable;
 
-    o.add(() => {
-      // dispse
+    exitAnimationEnd.add(() => {
+      this.gui.dispose();
+      this.plane.dispose();
+
+      this.gui = null;
+      this.plane = null;
     });
 
-    return o;
+    return exitAnimationEnd;
   }
 
-  constructor(scene: BABYLON.Scene) {
+  constructor(scene: BABYLON.Scene, score: number) {
     this.create(scene);
 
-    var panel = new GUI.StackPanel();
+    var panel = new GUI.StackPanel("panel");
     panel.heightInPixels = 300;
 
-    const glass = new GUI.Rectangle();
-
+    const glass = new GUI.Rectangle("glass");
     glass.zIndex = -1;
     glass.cornerRadius = 20;
     glass.height = `90%`;
     glass.widthInPixels = 400;
-    glass.background = "#ffffff33";
+    glass.background = Theme.COLOR_WHITE + "33";
     glass.thickness = 10;
     glass.paddingTop = `15%`;
 
-    var title = new GUI.Image("game-title", "./images/game-end.png");
+    var title = new GUI.Image("game-title", Assets.GUI_GAMEOVER_HEADING);
     title.left = -100;
     title.top = 0;
     title.heightInPixels = 100;
     title.widthInPixels = 270;
 
+    const textScore = createTextBlock(`Your scope`, 20, Theme.COLOR_WHITE);
+    const textScoreNumber = createTextBlock(`${0}`, 60, Theme.COLOR_WHITE);
+    const textInstruction = createTextBlock(
+      `Pull trigger to continue`,
+      20,
+      Theme.COLOR_WHITE
+    );
+
     panel.addControl(title);
-
-    panel.addControl(large(`Your scope`, 20));
-
-    panel.addControl(large(`${21321}`, 60));
-
-    panel.addControl(large(`Pull trigger to continue`, 20));
-
+    panel.addControl(textScore);
+    panel.addControl(textScoreNumber);
+    panel.addControl(textInstruction);
     panel.addControl(glass);
 
-    this.uiTexture.addControl(panel);
+    this.gui.addControl(panel);
 
     const position = new BABYLON.Vector3()
       .addInPlace(BABYLON.Vector3.Up())
       .addInPlace(BABYLON.Vector3.Forward().scale(6));
 
-    this.uiSurface.setDirection(BABYLON.Vector3.Forward());
-    this.uiSurface.position.copyFrom(position);
+    this.plane.setDirection(BABYLON.Vector3.Forward());
+    this.plane.position.copyFrom(position);
 
-    buildAnimationIn("x", "scaling", this.uiSurface);
+    createAnimationEnter(
+      "scaling",
+      this.plane
+    ).onAnimationEndObservable.addOnce(() => {
+      let displayScore = 0;
+
+      this.plane.onBeforeDrawObservable.add(() => {
+        displayScore = Math.min(
+          score,
+          displayScore + 1 + Math.round((score - displayScore) / 50)
+        );
+
+        textScoreNumber.text = `${displayScore}`;
+
+        if (displayScore >= score) {
+          this.plane.onBeforeDrawObservable.clear();
+        }
+      });
+    });
   }
 }
