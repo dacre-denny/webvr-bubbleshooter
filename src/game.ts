@@ -9,6 +9,7 @@ import { ActionQueue } from "./objects/queue";
 import { GameOver } from "./screens/gameover";
 import { AssetsManager } from "babylonjs";
 import { MainMenu } from "./screens/menu";
+import { GameHUD } from "./screens/hud";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -88,7 +89,8 @@ export class Game {
       this.scene.render();
     });
 
-    this.gotoMainMenu();
+    //    this.gotoMainMenu();
+    this.gotoGamePlaying();
   }
 
   private registerTrigger(callback: () => void) {
@@ -122,13 +124,13 @@ export class Game {
     this.registerTrigger(() => {
       this.soundButton.play();
 
-      menuScreen.close().add(() => {
-        this.onGamePlaying();
+      menuScreen.close().addOnce(() => {
+        this.gotoGamePlaying();
       });
     });
   }
 
-  private onGamePlaying() {
+  private gotoGamePlaying() {
     this.playerScore = 0;
     this.playerAttempts = Game.SHOT_ATTEMPTS;
 
@@ -138,6 +140,9 @@ export class Game {
     // this.uiManager.showHUD().setScore(this.playerScore);
 
     let shotBubble: Bubble = null;
+
+    const hud = new GameHUD();
+    hud.create(this.scene);
 
     const VRHelper = this.VRHelper;
     const camera = VRHelper.webVRCamera;
@@ -286,8 +291,10 @@ export class Game {
       if (this.level.getBubbles().some(Level.belowBaseline)) {
         onCleanUp();
 
-        // Game over condition reached
-        this.gotoGameOver();
+        hud.close().addOnce(() => {
+          // Game over condition reached
+          this.gotoGameOver();
+        });
       }
     };
 
@@ -316,7 +323,7 @@ export class Game {
     this.registerTrigger(() => {
       this.soundButton.play();
 
-      gameOverScreen.close().add(() => {
+      gameOverScreen.close().addOnce(() => {
         confetti.stop();
         this.gotoMainMenu();
       });
