@@ -16,6 +16,8 @@ export class Game {
   static readonly SHOT_ATTEMPTS = 3;
   static readonly SCORE_INCREMENT = 10;
 
+  private userAction: () => void;
+  private userActionExit: BABYLON.Observer<BABYLON.VRExperienceHelper>;
   private assetManager: AssetsManager;
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
@@ -85,35 +87,73 @@ export class Game {
       this.scene.render();
     });
 
+    this.VRHelper.onEnteringVRObservable.add(() => {
+      this.VRHelper.webVRCamera.position.set(0, -5, -3.75);
+    });
+    this.VRHelper.onExitingVRObservable.add(() => {
+      this.VRHelper.currentVRCamera.position.set(0, 0, -15);
+    });
+
     this.gotoMainMenu();
     //this.gotoGamePlaying();
   }
 
   private isVRReady() {
-    return this.VRHelper.isInVRMode && this.VRHelper.webVRCamera.leftController;
+    return (
+      this.VRHelper.isInVRMode &&
+      this.VRHelper.webVRCamera.controllers.length > 0
+    );
   }
 
-  private registerTrigger(callback: () => void) {
-    if (this.isVRReady()) {
-      const { VRHelper } = this;
-      const camera = VRHelper.webVRCamera;
-      camera.leftController.onTriggerStateChangedObservable.add(eventData => {
-        document.title = `${eventData.value}`;
-        if (eventData.value === 1) {
-          camera.leftController.onTriggerStateChangedObservable.clear();
-          callback();
-        }
-      });
-    } else {
-      const canvas = this.engine.getRenderingCanvas();
+  private setUserAction(callback: () => void) {
+    const canvas = this.engine.getRenderingCanvas();
+    canvas.removeEventListener("click", this.userAction);
+    const { VRHelper } = this;
+    const camera = VRHelper.webVRCamera;
 
-      const wrapper = () => {
-        canvas.removeEventListener("click", wrapper);
-        callback();
-      };
-
-      canvas.addEventListener("click", wrapper);
+    if (this.userActionExit) {
+      VRHelper.onExitingVRObservable.remove(this.userActionExit);
+      this.userActionExit = null;
     }
+    camera.onControllerMeshLoadedObservable.clear();
+
+    camera.controllers.forEach(controller =>
+      controller.onTriggerStateChangedObservable.clear()
+    );
+
+    const vrControllerCallback = (eventData: BABYLON.ExtendedGamepadButton) => {
+      document.title = `${eventData.value}`;
+      if (eventData.value === 1) {
+        callback();
+      }
+    };
+
+    if (callback) {
+      const [controller] = camera.controllers;
+      if (controller) {
+        controller.onTriggerStateChangedObservable.add(vrControllerCallback);
+        canvas.removeEventListener("click", callback);
+      } else {
+        canvas.addEventListener("click", callback);
+      }
+    }
+    camera.onControllerMeshLoadedObservable.add(() => {
+      const [controller] = camera.controllers;
+      if (controller) {
+        controller.onTriggerStateChangedObservable.add(vrControllerCallback);
+        canvas.removeEventListener("click", callback);
+      }
+    });
+
+    this.userActionExit = VRHelper.onExitingVRObservable.add(() => {
+      camera.controllers.forEach(controller =>
+        controller.onTriggerStateChangedObservable.clear()
+      );
+
+      canvas.addEventListener("click", callback);
+    });
+
+    this.userAction = callback;
   }
 
   private gotoMainMenu() {
@@ -122,7 +162,7 @@ export class Game {
     const menuScreen = new MainMenu();
     menuScreen.create(this.scene);
 
-    this.registerTrigger(() => {
+    this.setUserAction(() => {
       this.soundButton.play();
 
       menuScreen.close().addOnce(() => {
@@ -158,14 +198,18 @@ export class Game {
 
     const onCleanUp = () => {
       // Clean up event binding
-      if (!this.isVRReady()) {
-        window.removeEventListener("mousemove", onUpdatePlayer);
-      }
+      window.removeEventListener("mousemove", onUpdatePlayer);
+      this.setUserAction(null);
     };
 
     const onUpdatePlayer = (event?: MouseEvent | BABYLON.Camera) => {
       if (this.isVRReady()) {
         const leftController = camera.leftController;
+        const ray = leftController.getForwardRay();
+
+        document.title = `${ray.direction.x},${ray.direction.y},${
+          ray.direction.z
+        }`;
 
         const pickingInfo = this.scene.pickWithRay(
           leftController.getForwardRay(),
@@ -216,7 +260,7 @@ export class Game {
       ) {
         this.scene.onBeforeRenderObservable.addOnce(() => {
           onDestroyBubble(bubble);
-          this.registerTrigger(onShootBubble);
+          this.setUserAction(onShootBubble);
         });
       }
     };
@@ -293,19 +337,14 @@ export class Game {
           // Game over condition reached
           this.gotoGameOver();
         });
-      } else {
-        this.registerTrigger(onShootBubble);
       }
     };
 
-    if (this.isVRReady()) {
-      VRHelper.webVRCamera.position.set(0, -5, -3.75);
-    } else {
-      VRHelper.currentVRCamera.position.set(0, 0, -15);
+    if (!this.isVRReady()) {
       window.addEventListener("mousemove", onUpdatePlayer);
     }
 
-    this.registerTrigger(onShootBubble);
+    this.setUserAction(onShootBubble);
 
     hud.create(this.scene);
     hud.setLevel(100);
@@ -320,7 +359,7 @@ export class Game {
       new BABYLON.Vector3(0, 15, 0)
     );
 
-    this.registerTrigger(() => {
+    this.setUserAction(() => {
       this.soundButton.play();
 
       gameOverScreen.close().addOnce(() => {
