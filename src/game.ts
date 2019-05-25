@@ -12,7 +12,7 @@ import { randomColor } from "./utilities";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
-  static readonly SHOT_ATTEMPTS = 3;
+  static readonly SHOT_ATTEMPTS = 4;
   static readonly SCORE_INCREMENT = 10;
 
   private userAction: (event?: MouseEvent) => void;
@@ -308,9 +308,11 @@ export class Game {
     const onStoppedBubble = (bubble: Bubble) => {
       // Insert bubble into level
       const insertKey = this.level.insertBubble(bubble);
-      const bubbles = this.level.pluckLocalBubblesOfSameColor(insertKey);
+      const pluckedBubblses = this.level.pluckLocalBubblesOfSameColor(
+        insertKey
+      );
 
-      if (bubbles.length <= 1) {
+      if (pluckedBubblses.length < 3) {
         // If not bubbles to burst, then decrement shot attempts
         shotAttempts--;
 
@@ -322,14 +324,14 @@ export class Game {
         }
       } else {
         // If bubbles to burst have been found, add to the burst queue
-        bubbles.forEach(bubble =>
+        pluckedBubblses.forEach(pluckedBubble =>
           burstQue.add(() => {
             this.gameScore += Game.SHOOT_POWER;
 
             hud.setScore(this.gameScore);
             this.soundPop.play();
 
-            onDestroyBubble(bubble);
+            onDestroyBubble(pluckedBubble);
           })
         );
 

@@ -333,6 +333,41 @@ export class Level {
         bubbles.add(this.lattice.get(key));
         this.lattice.delete(key);
       }
+
+      // Now tht plucking has happened, search for detached/derooted clusters
+      {
+        const rootSet = new Set<string>();
+
+        for (let x = -LEVEL_WIDTH; x < LEVEL_WIDTH; x++) {
+          for (let z = -LEVEL_DEPTH; z < LEVEL_DEPTH; z++) {
+            for (let y = LEVEL_LAYERS; y > 0; y--) {
+              const key = this.getKey(x, y, z);
+              const bubble = this.lattice.get(key);
+
+              if (bubble) {
+                if (y === LEVEL_LAYERS) {
+                  rootSet.add(key);
+                } else {
+                  for (const [i, j, k] of options) {
+                    const adjKey = this.getKey(i + x, j + y, k + z);
+                    const adjBubble = this.lattice.get(key);
+                    if (adjBubble && rootSet.has(adjKey)) {
+                      rootSet.add(key);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        for (const key of Array.from(this.lattice.keys())) {
+          if (!rootSet.has(key) && !!this.lattice.get(key)) {
+            bubbles.add(this.lattice.get(key));
+            this.lattice.delete(key);
+          }
+        }
+      }
     }
 
     return Array.from(bubbles);

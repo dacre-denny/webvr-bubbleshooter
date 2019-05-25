@@ -6,14 +6,18 @@ export const enum Colors {
   RED,
   BLUE,
   GREEN,
-  YELLOW
+  YELLOW,
+  ORANGE,
+  PURPLE
 }
 
 export const ColorMap = new Map<Colors, BABYLON.Color3>([
   [Colors.BLUE, BABYLON.Color3.FromHexString(`#ceecff`)],
-  [Colors.RED, BABYLON.Color3.FromHexString(`#ffcece`)],
+  [Colors.RED, BABYLON.Color3.FromHexString(`#FF8386`)],
   [Colors.GREEN, BABYLON.Color3.FromHexString(`#b6ffa6`)],
-  [Colors.YELLOW, BABYLON.Color3.FromHexString(`#fff7a6`)]
+  [Colors.YELLOW, BABYLON.Color3.FromHexString(`#fff7a6`)],
+  [Colors.ORANGE, BABYLON.Color3.FromHexString(`#F8CC8F`)],
+  [Colors.PURPLE, BABYLON.Color3.FromHexString(`#F8B5FF`)]
 ]);
 
 export class Bubble {

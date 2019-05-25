@@ -3,12 +3,10 @@ import { Colors } from "./objects/bubble";
 import * as GUI from "babylonjs-gui";
 import { Theme } from "./assets";
 
-let n = 0;
-
 export function randomColor() {
-  n += 0.77;
+  // n += 0.77;
   //return Math.floor(n % 4) as Colors;
-  return Math.floor(Math.random() * 4) as Colors;
+  return Math.floor(Math.random() * 6) as Colors;
 }
 
 export function clamp(value: number, min: number, max: number) {
