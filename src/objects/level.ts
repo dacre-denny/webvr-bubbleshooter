@@ -5,7 +5,8 @@ import {
   clamp,
   createAnimationScale,
   createAnimationTranslate,
-  randomColor
+  randomColor,
+  applyPosition
 } from "../utilities";
 import { Bubble } from "./bubble";
 import { ActionRandom } from "./queue";
@@ -155,9 +156,10 @@ export class Level {
         zmin: -wall.width * 0.5,
         zmax: wall.width * 0.5,
         subdivisions: {
-          h: 3,
+          h: 5,
           w: 5
-        }
+        },
+        updatable: true
       });
 
       mesh.position.set(
@@ -170,18 +172,13 @@ export class Level {
       const phase = Math.PI * 2 * (index / 4);
       mesh.visibility = 0.5 + Math.sin(phase) * 0.2;
 
-      applyColors(
-        mesh,
-        new BABYLON.Color3(
-          0.75 + Math.sin(phase * 5) * 0.025,
-          0.75,
-          0.75 + Math.cos(phase * 5) * 0.025
-        )
-      );
-      material.alphaMode = BABYLON.Engine.ALPHA_MULTIPLY;
+      // applyPosition(mesh);
+
+      applyColors(mesh, BABYLON.Color3.FromInts(55, 55, 55), 5);
+      material.alphaMode = BABYLON.Engine.ALPHA_ADD;
       const imposter = new BABYLON.PhysicsImpostor(
         mesh,
-        BABYLON.PhysicsImpostor.BoxImpostor,
+        BABYLON.PhysicsImpostor.PlaneImpostor,
         { mass: 0, damping: 0, friction: 0, restitution: 0 },
         scene
       );
@@ -194,7 +191,7 @@ export class Level {
       level.addChild(mesh);
     });
     {
-      var mesh = BABYLON.MeshBuilder.CreateTiledGround("leve.top", {
+      var mesh = BABYLON.MeshBuilder.CreateTiledGround("level.top", {
         xmin: -LEVEL_WIDTH,
         xmax: LEVEL_WIDTH,
         zmin: -LEVEL_DEPTH,
@@ -209,7 +206,8 @@ export class Level {
       mesh.position.set(-OFFSET_X, LEVEL_LAYERS + Bubble.RADIUS, -OFFSET_Z);
       mesh.visibility = 0.75;
 
-      applyColors(mesh, new BABYLON.Color3(0.4, 0.6, 0.35));
+      applyColors(mesh, BABYLON.Color3.FromInts(55, 55, 55), 5);
+      material.alphaMode = BABYLON.Engine.ALPHA_ADD;
 
       const imposter = new BABYLON.PhysicsImpostor(
         mesh,

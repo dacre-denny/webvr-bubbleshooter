@@ -134,8 +134,6 @@ export class GameHUD {
       return;
     }
 
-    // let countReference = this.score;
-
     const counter = this.plane.onBeforeDrawObservable.add(() => {
       this.score += Math.round(Math.ceil((score - this.score) / 500));
 
@@ -166,7 +164,7 @@ export class GameHUD {
       this.plane.addChild(sphere);
 
       sphere.scaling.setAll(0);
-      sphere.position.set(0.65, 0.125, -0.1);
+      sphere.position.set(0.65, 0.175, -0.1);
 
       sphere.onBeforeDrawObservable.add(() => {
         const p = 0.01; // Date.now() / 10000;
@@ -214,4 +212,6 @@ export class GameHUD {
     }
     this.rectAttempts.width = `${Math.max(0, Math.min(100, percent))}%`;
   }
+
+  
 }

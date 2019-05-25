@@ -15,7 +15,28 @@ export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
+export function applyPosition(sphere: BABYLON.Mesh) {
+  const b = sphere.getBoundingInfo();
+  const range = BABYLON.Vector3.Maximize(
+    BABYLON.Vector3.One(),
+    b.maximum.subtract(b.minimum)
+  );
+  var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+  if (positions) {
+    for (var p = 0; p < positions.length / 3; p++) {
+      const x = positions[p * 3 + 0];
+      positions[p * 3 + 1] += Math.sin(x * 3) * 0.1;
+      // positions[p * 3 + 1] += Math.random();
+      // positions[p * 3 + 2] += Math.random();
+    }
+  }
+  sphere.setVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
+}
+export function applyColors(
+  sphere: BABYLON.Mesh,
+  color: BABYLON.Color3,
+  frequency: number = 3
+) {
   const b = sphere.getBoundingInfo();
   const range = BABYLON.Vector3.Maximize(
     BABYLON.Vector3.One(),
@@ -34,12 +55,13 @@ export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
         1
       );
 
-      const m = 3;
-      const g = color.g * (1 - 0.125) + Math.sin((m * pos.x) / range.x) * 0.125;
-      const b = color.b * (1 - 0.125) + Math.cos((m * pos.y) / range.y) * 0.125;
+      const g =
+        color.g * (1 - 0.125) + Math.sin((frequency * pos.x) / range.x) * 0.125;
+      const b =
+        color.b * (1 - 0.125) + Math.cos((frequency * pos.y) / range.y) * 0.125;
       const r =
         color.r * (1 - 0.125) +
-        Math.cos(Math.PI + (m * pos.z) / range.z) * 0.125;
+        Math.cos(Math.PI + (frequency * pos.z) / range.z) * 0.125;
 
       colors.push(r, g, b, 1);
     }

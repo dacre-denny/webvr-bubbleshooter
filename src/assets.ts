@@ -6,5 +6,5 @@ export const enum Assets {
 export const enum Theme {
   COLOR_WHITE = "#ffffff",
   COLOR_DARK = "#eeeeff",
-  COLOR_BLUE = "#ceecff"
+  COLOR_BLUE = "#8176c6"
 }
