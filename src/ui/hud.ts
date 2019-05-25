@@ -19,8 +19,11 @@ export class GameHUD {
   private textScore: GUI.TextBlock;
 
   public place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
-    this.plane.position.copyFrom(position.add(direction.scale(2)));
     this.plane.setDirection(direction);
+
+    this.plane.position.copyFrom(
+      position.add(direction.scale(2).add(this.plane.up.scale(-1)))
+    );
   }
 
   public close() {
@@ -46,40 +49,43 @@ export class GameHUD {
     if (this.plane) {
       return;
     }
-
+    const scale = 0.45;
     const plane = BABYLON.MeshBuilder.CreatePlane(
       "menu",
       {
         size: 5,
-        sourcePlane: new BABYLON.Plane(0, -1, 0, 0)
+        sourcePlane: new BABYLON.Plane(0, -1, 0, 0),
+        width: 4 * scale,
+        height: 1.5 * scale
       },
       scene
     );
 
     const texture = GUI.AdvancedDynamicTexture.CreateForMesh(
       plane,
-      800,
-      800,
+      400,
+      150,
       true
     );
 
     var panel = new GUI.StackPanel("panel");
-    panel.heightInPixels = 100;
+    panel.heightInPixels = 150;
+    panel.widthInPixels = 400;
     texture.addControl(panel);
 
     {
       const glass = createGlass();
       glass.height = "100%";
+      glass.width = "100%";
       glass.paddingTop = "0%";
-      glass.widthInPixels = 275;
 
       panel.addControl(glass);
     }
 
     {
-      const textScore = createTextBlock(``, 40, Theme.COLOR_WHITE);
-      textScore.heightInPixels = 65;
-      textScore.width = "30%";
+      const textScore = createTextBlock(``, 60, Theme.COLOR_BLUE);
+      textScore.heightInPixels = 100;
+      textScore.widthInPixels = 345;
       textScore.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
 
       panel.addControl(textScore);
@@ -90,7 +96,7 @@ export class GameHUD {
     {
       const rectWrap = new GUI.Rectangle();
       rectWrap.heightInPixels = 20;
-      rectWrap.width = `30%`;
+      rectWrap.widthInPixels = 345;
       rectWrap.cornerRadius = 100;
       rectWrap.background = Theme.COLOR_WHITE + "44";
       rectWrap.thickness = 0;
@@ -120,9 +126,6 @@ export class GameHUD {
 
     this.texture = texture;
     this.plane = plane;
-
-    // this.setScore(0);
-    // this.setBubble(Colors.BLUE);
   }
 
   public setScore(score: number) {
