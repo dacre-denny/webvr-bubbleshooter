@@ -78,11 +78,11 @@ export class Level {
     );
 
     //If no colors add colors to sphere
-    applyColors(sphere, BABYLON.Color3.Black());
+    applyColors(sphere, new BABYLON.Color3(0.75, 0.75, 0.75));
 
     const material = new BABYLON.StandardMaterial("level.material", scene);
-    material.diffuseColor = BABYLON.Color3.White();
     material.disableLighting = true;
+    material.diffuseColor = BABYLON.Color3.White();
     material.emissiveColor = BABYLON.Color3.White();
 
     sphere.material = material;
@@ -166,10 +166,7 @@ export class Level {
       );
       mesh.visibility = 0.5;
 
-      applyColors(
-        mesh,
-        new BABYLON.Color3(mesh.position.x, mesh.position.y, mesh.position.z)
-      );
+      applyColors(mesh, new BABYLON.Color3(0.75, 0.75, 0.75));
 
       const imposter = new BABYLON.PhysicsImpostor(
         mesh,

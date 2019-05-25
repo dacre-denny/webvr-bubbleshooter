@@ -1,6 +1,6 @@
 import * as BABYLON from "babylonjs";
 import { Bubble, Colors } from "./objects/bubble";
-import { randomColor, applyColors } from "./utilities";
+import { applyColors } from "./utilities";
 
 export class BubbleFactory {
   private bubbles: Map<Colors, BABYLON.Mesh>;

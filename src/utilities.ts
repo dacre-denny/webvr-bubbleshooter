@@ -26,9 +26,16 @@ export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
     var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
 
     for (var p = 0; p < positions.length / 3; p++) {
-      const g = color.g + Math.sin(positions[p * 3 + 0]) * 0.75;
-      const b = color.b + Math.cos(positions[p * 3 + 2]) * 0.75;
-      const r = color.r + Math.cos(1.7 + positions[p * 3 + 2]) * 0.75;
+      let pos = new BABYLON.Vector4(
+        positions[p * 3 + 0],
+        positions[p * 3 + 1],
+        positions[p * 3 + 2],
+        1
+      );
+
+      const g = color.g + Math.sin(pos.x) * 0.25;
+      const b = color.b + Math.cos(pos.y) * 0.25;
+      const r = color.r + Math.cos(pos.z) * 0.25;
 
       colors.push(r, g, b, 1);
     }
