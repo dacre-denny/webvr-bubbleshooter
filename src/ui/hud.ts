@@ -1,12 +1,13 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Theme } from "../assets";
-import { Colors } from "../objects/bubble";
+import { Colors, ColorMap } from "../objects/bubble";
 import {
   createAnimationEnter,
   createAnimationExit,
   createGlass,
-  createTextBlock
+  createTextBlock,
+  applyColors
 } from "../utilities";
 
 export class GameHUD {
@@ -145,13 +146,14 @@ export class GameHUD {
     }
 
     const animateInsertBubble = () => {
-      var sphere = BABYLON.MeshBuilder.CreateSphere(
+      const scene = this.plane.getScene();
+      const sphere = BABYLON.MeshBuilder.CreateSphere(
         "sphere",
         {
           segments: 1,
           diameter: 0.25
         },
-        this.plane.getScene()
+        scene
       );
 
       sphere.scaling.setAll(0);
@@ -170,6 +172,15 @@ export class GameHUD {
       });
 
       createAnimationEnter("scaling", sphere);
+
+      const material = new BABYLON.StandardMaterial(`bubble.material`, scene);
+      material.disableLighting = true;
+      material.emissiveColor = BABYLON.Color3.White();
+      material.diffuseColor = BABYLON.Color3.White();
+
+      applyColors(sphere, ColorMap.get(color));
+
+      sphere.material = material;
 
       this.bubble = sphere;
     };

@@ -4,7 +4,11 @@ import { BubbleFactory } from "./bubbleFactory";
 import { Player } from "./objects/player";
 import { Level } from "./objects/level";
 import { Particles } from "./objects/particles";
-import { hasVirtualDisplays, createAnimationExit } from "./utilities";
+import {
+  hasVirtualDisplays,
+  createAnimationExit,
+  randomColor
+} from "./utilities";
 import { ActionQueue } from "./objects/queue";
 import { GameOver } from "./ui/gameover";
 import { AssetsManager } from "babylonjs";
@@ -130,6 +134,7 @@ export class Game {
     const bubbleFactory = new BubbleFactory(this.scene);
     this.level.insertBubbleLayer(bubbleFactory);
 
+    let nextBubbleColor = randomColor();
     let shotAttempts = Game.SHOT_ATTEMPTS;
     let shotBubble: Bubble = null;
 
@@ -215,7 +220,7 @@ export class Game {
 
     const onShootBubble = () => {
       if (canShootBubble()) {
-        const bubble = bubbleFactory.createBubble();
+        const bubble = bubbleFactory.createBubble(nextBubbleColor);
         bubble.setPosition(this.player.getPosition());
         bubble.setVelocity(this.player.getDirection().scale(Game.SHOOT_POWER));
         Particles.createShoot(
@@ -237,6 +242,8 @@ export class Game {
         );
 
         shotBubble = bubble;
+        nextBubbleColor = randomColor();
+        hud.setBubble(nextBubbleColor);
       }
     };
 
@@ -262,7 +269,6 @@ export class Game {
             this.gameScore += Game.SHOOT_POWER;
 
             hud.setScore(this.gameScore);
-            hud.setBubble(Colors.BLUE);
             /*
             this.soundExplode.play();
             */

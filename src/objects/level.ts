@@ -5,7 +5,8 @@ import {
   clamp,
   createAnimationTranslate,
   createAnimationEnter,
-  createAnimationScale
+  createAnimationScale,
+  randomColor
 } from "../utilities";
 import { Bubble } from "./bubble";
 import { ActionRandom } from "./queue";
@@ -435,7 +436,7 @@ export class Level {
     for (let x = -LEVEL_WIDTH; x < LEVEL_WIDTH; x++) {
       for (let z = -LEVEL_DEPTH; z < LEVEL_DEPTH; z++) {
         const key = this.getKey(x, LEVEL_LAYERS, z);
-        const bubble = bubbleFactory.createBubble();
+        const bubble = bubbleFactory.createBubble(randomColor());
 
         bubble.getImposter().setMass(0);
 

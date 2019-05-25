@@ -9,6 +9,13 @@ export const enum Colors {
   YELLOW
 }
 
+export const ColorMap = new Map<Colors, BABYLON.Color3>([
+  [Colors.BLUE, BABYLON.Color3.Blue()],
+  [Colors.RED, BABYLON.Color3.Red()],
+  [Colors.GREEN, BABYLON.Color3.Green()],
+  [Colors.YELLOW, BABYLON.Color3.Yellow()]
+]);
+
 export class Bubble {
   static readonly RADIUS = 0.5;
 
@@ -51,17 +58,7 @@ export class Bubble {
   }
 
   public getColor3() {
-    switch (this.color) {
-      case Colors.RED:
-        return BABYLON.Color3.Red();
-      case Colors.BLUE:
-        return BABYLON.Color3.Blue();
-      case Colors.GREEN:
-        return BABYLON.Color3.Green();
-      case Colors.YELLOW:
-        return BABYLON.Color3.Yellow();
-    }
-    return BABYLON.Color3.White();
+    return ColorMap.get(this.color)!;
   }
 
   public setPosition(position: BABYLON.Vector3) {

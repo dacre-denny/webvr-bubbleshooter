@@ -56,8 +56,8 @@ export class BubbleFactory {
     this.bubbles = this.create(scene);
   }
 
-  public createBubble(): Bubble {
-    const color = randomColor();
+  public createBubble(color: Colors): Bubble {
+    // const color = randomColor();
     const mesh = this.bubbles.get(color);
 
     const instance = mesh.createInstance(`bubble.mesh.instance.${this.count}`);
