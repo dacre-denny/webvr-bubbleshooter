@@ -1,24 +1,22 @@
 import * as BABYLON from "babylonjs";
-import { Bubble, Colors } from "./objects/bubble";
 import { BubbleFactory } from "./bubbleFactory";
-import { Player } from "./objects/player";
+import { Bubble } from "./objects/bubble";
 import { Level } from "./objects/level";
 import { Particles } from "./objects/particles";
-import { createAnimationExit, randomColor } from "./utilities";
+import { Player } from "./objects/player";
 import { ActionQueue } from "./objects/queue";
 import { GameOver } from "./ui/gameover";
-import { AssetsManager } from "babylonjs";
-import { MainMenu } from "./ui/menu";
 import { GameHUD } from "./ui/hud";
+import { MainMenu } from "./ui/menu";
+import { randomColor } from "./utilities";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 3;
   static readonly SCORE_INCREMENT = 10;
 
-  private userAction: () => void;
-  private userActionExit: BABYLON.Observer<BABYLON.VRExperienceHelper>;
-  private assetManager: AssetsManager;
+  private userAction: (event?: MouseEvent) => void;
+  private userMoveAction: (event?: MouseEvent) => void;
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
@@ -35,8 +33,6 @@ export class Game {
     const canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
     this.engine = new BABYLON.Engine(canvas, false);
     this.scene = new BABYLON.Scene(this.engine);
-    this.assetManager = new AssetsManager(this.scene);
-    // this.assetManager.addImageTask()
 
     this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
@@ -75,6 +71,8 @@ export class Game {
     });
     this.VRHelper.enableInteractions();
 
+    this.EventConfig();
+
     this.level.create(this.scene);
     this.player.create(this.scene);
 
@@ -98,61 +96,41 @@ export class Game {
     //this.gotoGamePlaying();
   }
 
-  private isVRReady() {
-    return (
-      this.VRHelper.isInVRMode &&
-      this.VRHelper.webVRCamera.controllers.length > 0
-    );
-  }
-
-  private setUserAction(callback: () => void) {
-    const canvas = this.engine.getRenderingCanvas();
-    canvas.removeEventListener("click", this.userAction);
+  private EventConfig() {
     const { VRHelper } = this;
     const camera = VRHelper.webVRCamera;
+    const canvas = this.engine.getRenderingCanvas();
 
-    if (this.userActionExit) {
-      VRHelper.onExitingVRObservable.remove(this.userActionExit);
-      this.userActionExit = null;
-    }
-    camera.onControllerMeshLoadedObservable.clear();
-
-    camera.controllers.forEach(controller =>
-      controller.onTriggerStateChangedObservable.clear()
-    );
-
-    const vrControllerCallback = (eventData: BABYLON.ExtendedGamepadButton) => {
-      document.title = `${eventData.value}`;
-      if (eventData.value === 1) {
-        callback();
-      }
-    };
-
-    if (callback) {
-      const [controller] = camera.controllers;
-      if (controller) {
-        controller.onTriggerStateChangedObservable.add(vrControllerCallback);
-        canvas.removeEventListener("click", callback);
-      } else {
-        canvas.addEventListener("click", callback);
-      }
-    }
     camera.onControllerMeshLoadedObservable.add(() => {
-      const [controller] = camera.controllers;
-      if (controller) {
-        controller.onTriggerStateChangedObservable.add(vrControllerCallback);
-        canvas.removeEventListener("click", callback);
+      camera.onAfterCheckInputsObservable.add(() => this.userMoveAction());
+
+      camera.controllers.forEach(controller => {
+        controller.onTriggerStateChangedObservable.add(eventData => {
+          if (eventData.value === 1) {
+            this.userAction();
+          }
+        });
+      });
+    });
+
+    canvas.addEventListener("click", (event: MouseEvent) => {
+      if (this.userAction) {
+        this.userAction(event);
       }
     });
 
-    this.userActionExit = VRHelper.onExitingVRObservable.add(() => {
-      camera.controllers.forEach(controller =>
-        controller.onTriggerStateChangedObservable.clear()
-      );
-
-      canvas.addEventListener("click", callback);
+    canvas.addEventListener("mousemove", (event: MouseEvent) => {
+      if (this.userMoveAction) {
+        this.userMoveAction(event);
+      }
     });
+  }
 
+  private setUserMoveAction(callback: (event?: MouseEvent) => void) {
+    this.userMoveAction = callback;
+  }
+
+  private setUserTriggerAction(callback: () => void) {
     this.userAction = callback;
   }
 
@@ -162,12 +140,22 @@ export class Game {
     const menuScreen = new MainMenu();
     menuScreen.create(this.scene);
 
-    this.setUserAction(() => {
+    this.setUserTriggerAction(() => {
       this.soundButton.play();
 
       menuScreen.close().addOnce(() => {
         this.gotoGamePlaying();
       });
+    });
+
+    this.setUserMoveAction(() => {
+      const [controller] = this.VRHelper.webVRCamera.controllers;
+      if (controller) {
+        menuScreen.place(
+          controller.devicePosition,
+          controller.getForwardRay().direction
+        );
+      }
     });
   }
 
@@ -199,32 +187,12 @@ export class Game {
     const onCleanUp = () => {
       // Clean up event binding
       window.removeEventListener("mousemove", onUpdatePlayer);
-      this.setUserAction(null);
+      this.setUserTriggerAction(null);
+      this.setUserMoveAction(null);
     };
 
-    const onUpdatePlayer = (event?: MouseEvent | BABYLON.Camera) => {
-      if (this.isVRReady()) {
-        const leftController = camera.leftController;
-        const ray = leftController.getForwardRay();
-
-        document.title = `${ray.direction.x},${ray.direction.y},${
-          ray.direction.z
-        }`;
-
-        const pickingInfo = this.scene.pickWithRay(
-          leftController.getForwardRay(),
-          (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
-          false
-        );
-
-        if (pickingInfo.hit) {
-          const target = pickingInfo.pickedPoint;
-
-          target.y = Math.max(target.y, Level.BASELINE);
-
-          this.player.lookAt(target);
-        }
-      } else if (event instanceof MouseEvent) {
+    const onUpdatePlayer = (event?: MouseEvent) => {
+      if (event instanceof MouseEvent) {
         const pickingInfo = this.scene.pick(
           event.clientX,
           event.clientY,
@@ -238,6 +206,27 @@ export class Game {
           target.y = Math.max(target.y, Level.BASELINE);
 
           this.player.lookAt(target);
+        }
+      } else {
+        const [controller] = this.VRHelper.webVRCamera.controllers;
+        if (controller) {
+          const ray = controller.getForwardRay();
+
+          hud.place(controller.devicePosition, ray.direction);
+
+          const pickingInfo = this.scene.pickWithRay(
+            ray,
+            (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
+            false
+          );
+
+          if (pickingInfo.hit) {
+            const target = pickingInfo.pickedPoint;
+
+            target.y = Math.max(target.y, Level.BASELINE);
+
+            this.player.lookAt(target);
+          }
         }
       }
     };
@@ -260,7 +249,7 @@ export class Game {
       ) {
         this.scene.onBeforeRenderObservable.addOnce(() => {
           onDestroyBubble(bubble);
-          this.setUserAction(onShootBubble);
+          this.setUserTriggerAction(onShootBubble);
         });
       }
     };
@@ -340,13 +329,12 @@ export class Game {
       }
     };
 
-    if (!this.isVRReady()) {
-      window.addEventListener("mousemove", onUpdatePlayer);
-    }
-
-    this.setUserAction(onShootBubble);
+    this.setUserTriggerAction(onShootBubble);
+    this.setUserMoveAction(onUpdatePlayer);
 
     hud.create(this.scene);
+    hud.setBubble(nextBubbleColor);
+    hud.setScore(this.gameScore);
     hud.setLevel(100);
   }
 
@@ -359,7 +347,7 @@ export class Game {
       new BABYLON.Vector3(0, 15, 0)
     );
 
-    this.setUserAction(() => {
+    this.setUserTriggerAction(() => {
       this.soundButton.play();
 
       gameOverScreen.close().addOnce(() => {

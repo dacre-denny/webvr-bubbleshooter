@@ -12,6 +12,11 @@ export class MainMenu {
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
 
+  public place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
+    this.plane.position.copyFrom(position.add(direction.scale(2)));
+    this.plane.setDirection(direction);
+  }
+
   public close() {
     if (!this.plane) {
       return;

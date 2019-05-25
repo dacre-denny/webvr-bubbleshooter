@@ -18,6 +18,11 @@ export class GameHUD {
   private bubble: BABYLON.Mesh;
   private textScore: GUI.TextBlock;
 
+  public place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
+    this.plane.position.copyFrom(position.add(direction.scale(2)));
+    this.plane.setDirection(direction);
+  }
+
   public close() {
     if (!this.plane) {
       return;
@@ -116,8 +121,8 @@ export class GameHUD {
     this.texture = texture;
     this.plane = plane;
 
-    this.setScore(10);
-    this.setBubble(Colors.BLUE);
+    // this.setScore(0);
+    // this.setBubble(Colors.BLUE);
   }
 
   public setScore(score: number) {
@@ -155,10 +160,10 @@ export class GameHUD {
         },
         scene
       );
+      this.plane.addChild(sphere);
 
       sphere.scaling.setAll(0);
-      sphere.position.set(0.65, 1.125, 5.9);
-      this.plane.addChild(sphere);
+      sphere.position.set(0.65, 0.125, -0.1);
 
       sphere.onBeforeDrawObservable.add(() => {
         const p = 0.01; // Date.now() / 10000;
