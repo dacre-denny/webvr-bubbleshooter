@@ -110,8 +110,6 @@ export class Game {
   }
 
   private gotoMainMenu() {
-    this.level.reset();
-
     this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
     const menuScreen = new MainMenu();
@@ -160,12 +158,6 @@ export class Game {
     const onUpdatePlayer = (event?: MouseEvent | BABYLON.Camera) => {
       if (hasVirtualDisplays() && camera.leftController) {
         const leftController = camera.leftController;
-
-        // this.uiManager.updatePlacement(
-        //   VRHelper.position.add(leftController.position),
-        //   leftController.getForwardRay().direction,
-        //   1
-        // );
 
         const pickingInfo = this.scene.pickWithRay(
           leftController.getForwardRay(),
@@ -263,8 +255,6 @@ export class Game {
           this.level.insertBubbleLayer(bubbleFactory);
           shotAttempts = Game.SHOT_ATTEMPTS;
         }
-
-        hud.setLevel((100 * shotAttempts) / Game.SHOT_ATTEMPTS);
       } else {
         // If bubbles to burst have been found, add to the burst queue
         bubbles.forEach(bubble =>
@@ -278,15 +268,17 @@ export class Game {
             */
 
             onDestroyBubble(bubble);
-            //this.scene.
           })
         );
 
         shotAttempts = Game.SHOT_ATTEMPTS;
       }
 
+      hud.setLevel((100 * shotAttempts) / Game.SHOT_ATTEMPTS);
+
       if (this.level.getBubbles().some(Level.belowBaseline)) {
         onCleanUp();
+        this.level.reset();
 
         hud.close().addOnce(() => {
           // Game over condition reached

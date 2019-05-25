@@ -1,5 +1,4 @@
 import * as BABYLON from "babylonjs";
-import { Bubble } from "./bubble";
 
 export class Particles {
   public static createShoot(

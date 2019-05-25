@@ -239,7 +239,9 @@ export class Level {
       const bubbles = this.getBubbles();
       const ridx = Math.floor(Math.random() * bubbles.length);
       const bubble = bubbles[ridx];
-      createAnimationScale("scalingDeterminant", bubble.getMesh());
+      if (bubble) {
+        createAnimationScale("scalingDeterminant", bubble.getMesh());
+      }
     });
   }
 
