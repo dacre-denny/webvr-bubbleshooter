@@ -4,11 +4,7 @@ import { BubbleFactory } from "./bubbleFactory";
 import { Player } from "./objects/player";
 import { Level } from "./objects/level";
 import { Particles } from "./objects/particles";
-import {
-  hasVirtualDisplays,
-  createAnimationExit,
-  randomColor
-} from "./utilities";
+import { createAnimationExit, randomColor } from "./utilities";
 import { ActionQueue } from "./objects/queue";
 import { GameOver } from "./ui/gameover";
 import { AssetsManager } from "babylonjs";
@@ -89,27 +85,34 @@ export class Game {
       this.scene.render();
     });
 
-    //    this.gotoMainMenu();
-    this.gotoGamePlaying();
+    this.gotoMainMenu();
+    //this.gotoGamePlaying();
+  }
+
+  private isVRReady() {
+    return this.VRHelper.isInVRMode && this.VRHelper.webVRCamera.leftController;
   }
 
   private registerTrigger(callback: () => void) {
-    if (hasVirtualDisplays()) {
+    if (this.isVRReady()) {
       const { VRHelper } = this;
       const camera = VRHelper.webVRCamera;
       camera.leftController.onTriggerStateChangedObservable.add(eventData => {
+        document.title = `${eventData.value}`;
         if (eventData.value === 1) {
           camera.leftController.onTriggerStateChangedObservable.clear();
           callback();
         }
       });
     } else {
+      const canvas = this.engine.getRenderingCanvas();
+
       const wrapper = () => {
-        window.removeEventListener("click", wrapper);
+        canvas.removeEventListener("click", wrapper);
         callback();
       };
 
-      window.addEventListener("click", wrapper);
+      canvas.addEventListener("click", wrapper);
     }
   }
 
@@ -155,13 +158,13 @@ export class Game {
 
     const onCleanUp = () => {
       // Clean up event binding
-      if (!hasVirtualDisplays()) {
+      if (!this.isVRReady()) {
         window.removeEventListener("mousemove", onUpdatePlayer);
       }
     };
 
     const onUpdatePlayer = (event?: MouseEvent | BABYLON.Camera) => {
-      if (hasVirtualDisplays() && camera.leftController) {
+      if (this.isVRReady()) {
         const leftController = camera.leftController;
 
         const pickingInfo = this.scene.pickWithRay(
@@ -295,7 +298,9 @@ export class Game {
       }
     };
 
-    if (!hasVirtualDisplays()) {
+    if (this.isVRReady()) {
+      VRHelper.webVRCamera.position.set(0, -5, -3.75);
+    } else {
       VRHelper.currentVRCamera.position.set(0, 0, -15);
       window.addEventListener("mousemove", onUpdatePlayer);
     }

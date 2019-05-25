@@ -15,10 +15,6 @@ export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-export function hasVirtualDisplays() {
-  return window.navigator.activeVRDisplays;
-}
-
 export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
   const b = sphere.getBoundingInfo();
   const range = BABYLON.Vector3.Maximize(
