@@ -37,6 +37,10 @@ export class Level {
     return bubble.getMesh().position.y <= Level.BASELINE;
   }
 
+  public static almostBelowBaseline(bubble: Bubble): boolean {
+    return bubble.getMesh().position.y <= Level.BASELINE + 1;
+  }
+
   public static isImposterTop(imposter: BABYLON.PhysicsImpostor) {
     return (imposter.object as BABYLON.Mesh).name === `level.top`;
   }

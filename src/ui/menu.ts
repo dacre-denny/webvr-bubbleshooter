@@ -71,7 +71,7 @@ export class MainMenu {
     }
 
     panel.addControl(
-      createTextBlock(`Pull trigger to play!`, 20, Theme.COLOR_WHITE)
+      createTextBlock(`Pull trigger to play!`, 20, Theme.COLOR_BLUE)
     );
     {
       const glass = createGlass();

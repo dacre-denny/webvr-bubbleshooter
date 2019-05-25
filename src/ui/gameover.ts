@@ -66,13 +66,13 @@ export class GameOver {
     title.heightInPixels = 100;
     title.widthInPixels = 270;
 
-    const textScoreNumber = createTextBlock(`${0}`, 60, Theme.COLOR_WHITE);
+    const textScoreNumber = createTextBlock(`${0}`, 60, Theme.COLOR_BLUE);
 
     panel.addControl(title);
-    panel.addControl(createTextBlock(`Your scope`, 20, Theme.COLOR_WHITE));
+    panel.addControl(createTextBlock(`Your scope`, 20, Theme.COLOR_BLUE));
     panel.addControl(textScoreNumber);
     panel.addControl(
-      createTextBlock(`Pull trigger to continue`, 20, Theme.COLOR_WHITE)
+      createTextBlock(`Pull trigger to continue`, 20, Theme.COLOR_BLUE)
     );
 
     const glass = createGlass();

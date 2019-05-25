@@ -15,6 +15,7 @@ export class GameHUD {
   private plane: BABYLON.Mesh;
   private score: number = 0;
 
+  private glass: GUI.Rectangle;
   private rectAttempts: GUI.Rectangle;
   private bubble: BABYLON.Mesh;
   private textScore: GUI.TextBlock;
@@ -81,6 +82,7 @@ export class GameHUD {
       glass.paddingTop = "0%";
 
       panel.addControl(glass);
+      this.glass = glass;
     }
 
     {
@@ -213,5 +215,7 @@ export class GameHUD {
     this.rectAttempts.width = `${Math.max(0, Math.min(100, percent))}%`;
   }
 
-  
+  public setAlert(alert: boolean) {
+    this.glass.background = alert ? "#ff666677" : Theme.COLOR_WHITE + "33";
+  }
 }

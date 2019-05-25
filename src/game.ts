@@ -101,10 +101,15 @@ export class Game {
       this.scene.render();
     });
 
-    this.VRHelper.currentVRCamera.position.set(3.75, -5, -3.75);
+    this.VRHelper.onAfterEnteringVRObservable.add(() => {
+      this.VRHelper.currentVRCamera.position.set(3.75, -5, -3.75);
+    });
+    this.VRHelper.onExitingVRObservable.add(() => {
+      this.VRHelper.currentVRCamera.position.set(0, 0, 0);
+    });
 
-    //this.gotoMainMenu();
-    this.gotoGamePlaying();
+    this.gotoMainMenu();
+    // this.gotoGamePlaying();
   }
 
   private EventConfig() {
@@ -323,17 +328,17 @@ export class Game {
 
             hud.setScore(this.gameScore);
             this.soundPop.play();
-            /*
-             */
 
             onDestroyBubble(bubble);
           })
         );
 
-        shotAttempts = Game.SHOT_ATTEMPTS;
+        // shotAttempts = Game.SHOT_ATTEMPTS;
+        shotAttempts = Math.min(shotAttempts + 1, Game.SHOT_ATTEMPTS);
       }
 
       hud.setLevel((100 * shotAttempts) / Game.SHOT_ATTEMPTS);
+      hud.setAlert(this.level.getBubbles().some(Level.almostBelowBaseline));
 
       if (this.level.getBubbles().some(Level.belowBaseline)) {
         onCleanUp();
