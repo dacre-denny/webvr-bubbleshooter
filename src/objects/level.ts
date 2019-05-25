@@ -3,9 +3,8 @@ import { BubbleFactory } from "../bubbleFactory";
 import {
   applyColors,
   clamp,
-  createAnimationTranslate,
-  createAnimationEnter,
   createAnimationScale,
+  createAnimationTranslate,
   randomColor
 } from "../utilities";
 import { Bubble } from "./bubble";
@@ -78,7 +77,7 @@ export class Level {
     );
 
     //If no colors add colors to sphere
-    applyColors(sphere, new BABYLON.Color3(0.75, 0.75, 0.75));
+    applyColors(sphere, BABYLON.Color3.White());
 
     const material = new BABYLON.StandardMaterial("level.material", scene);
     material.disableLighting = true;
@@ -150,24 +149,36 @@ export class Level {
         -wall.position.z
       ).normalize();
 
-      var mesh = BABYLON.MeshBuilder.CreatePlane(`plane.${index}`, {
-        sourcePlane: BABYLON.Plane.FromPositionAndNormal(
-          BABYLON.Vector3.Zero(),
-          direction
-        ),
-        width: wall.width,
-        height: wall.height
+      var mesh = BABYLON.MeshBuilder.CreateTiledGround("Tiled Ground" + index, {
+        xmin: -wall.height * 0.5,
+        xmax: wall.height,
+        zmin: -wall.width * 0.5,
+        zmax: wall.width * 0.5,
+        subdivisions: {
+          h: 3,
+          w: 5
+        }
       });
-      // BABYLON.MeshBuilder.CreateBox(`level.${index}`, wall, scene);
+
       mesh.position.set(
         wall.position.x - OFFSET_X,
-        wall.position.y,
+        Bubble.RADIUS,
         wall.position.z - OFFSET_Z
       );
-      mesh.visibility = 0.5;
+      mesh.alignWithNormal(direction);
 
-      applyColors(mesh, new BABYLON.Color3(0.75, 0.75, 0.75));
+      const phase = Math.PI * 2 * (index / 4);
+      mesh.visibility = 0.5 + Math.sin(phase) * 0.2;
 
+      applyColors(
+        mesh,
+        new BABYLON.Color3(
+          0.75 + Math.sin(phase * 5) * 0.025,
+          0.75,
+          0.75 + Math.cos(phase * 5) * 0.025
+        )
+      );
+      material.alphaMode = BABYLON.Engine.ALPHA_MULTIPLY;
       const imposter = new BABYLON.PhysicsImpostor(
         mesh,
         BABYLON.PhysicsImpostor.BoxImpostor,
@@ -183,25 +194,22 @@ export class Level {
       level.addChild(mesh);
     });
     {
-      var mesh = BABYLON.MeshBuilder.CreatePlane(
-        `level.top`,
-        {
-          sourcePlane: BABYLON.Plane.FromPositionAndNormal(
-            BABYLON.Vector3.Zero(),
-            BABYLON.Vector3.Down()
-          ),
-          width: LEVEL_DEPTH * 2,
-          height: LEVEL_WIDTH * 2
-        },
-        scene
-      );
-      mesh.position.set(-OFFSET_X, LEVEL_LAYERS + Bubble.RADIUS, -OFFSET_Z);
-      mesh.visibility = 0.5;
+      var mesh = BABYLON.MeshBuilder.CreateTiledGround("leve.top", {
+        xmin: -LEVEL_WIDTH,
+        xmax: LEVEL_WIDTH,
+        zmin: -LEVEL_DEPTH,
+        zmax: LEVEL_DEPTH,
+        subdivisions: {
+          h: 5,
+          w: 5
+        }
+      });
+      mesh.alignWithNormal(BABYLON.Vector3.Down());
 
-      applyColors(
-        mesh,
-        new BABYLON.Color3(mesh.position.x, mesh.position.y, mesh.position.z)
-      );
+      mesh.position.set(-OFFSET_X, LEVEL_LAYERS + Bubble.RADIUS, -OFFSET_Z);
+      mesh.visibility = 0.75;
+
+      applyColors(mesh, new BABYLON.Color3(0.4, 0.6, 0.35));
 
       const imposter = new BABYLON.PhysicsImpostor(
         mesh,

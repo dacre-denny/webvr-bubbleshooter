@@ -20,6 +20,11 @@ export function hasVirtualDisplays() {
 }
 
 export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
+  const b = sphere.getBoundingInfo();
+  const range = BABYLON.Vector3.Maximize(
+    BABYLON.Vector3.One(),
+    b.maximum.subtract(b.minimum)
+  );
   var colors = sphere.getVerticesData(BABYLON.VertexBuffer.ColorKind);
   if (!colors) {
     colors = [];
@@ -33,9 +38,12 @@ export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3) {
         1
       );
 
-      const g = color.g + Math.sin(pos.x) * 0.25;
-      const b = color.b + Math.cos(pos.y) * 0.25;
-      const r = color.r + Math.cos(pos.z) * 0.25;
+      const m = 3;
+      const g = color.g * (1 - 0.125) + Math.sin((m * pos.x) / range.x) * 0.125;
+      const b = color.b * (1 - 0.125) + Math.cos((m * pos.y) / range.y) * 0.125;
+      const r =
+        color.r * (1 - 0.125) +
+        Math.cos(Math.PI + (m * pos.z) / range.z) * 0.125;
 
       colors.push(r, g, b, 1);
     }

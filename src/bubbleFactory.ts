@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { Bubble, Colors } from "./objects/bubble";
+import { Bubble, Colors, ColorMap } from "./objects/bubble";
 import { applyColors } from "./utilities";
 
 export class BubbleFactory {
@@ -31,19 +31,12 @@ export class BubbleFactory {
   private create(scene: BABYLON.Scene) {
     const bubbles = new Map<Colors, BABYLON.Mesh>();
 
-    const mapping = new Map<Colors, BABYLON.Color3>([
-      [Colors.RED, BABYLON.Color3.Red()],
-      [Colors.BLUE, BABYLON.Color3.Blue()],
-      [Colors.GREEN, BABYLON.Color3.Green()],
-      [Colors.YELLOW, BABYLON.Color3.Yellow()]
-    ]);
-
     const material = new BABYLON.StandardMaterial(`bubble.material`, scene);
     material.disableLighting = true;
     material.emissiveColor = BABYLON.Color3.White();
     material.diffuseColor = BABYLON.Color3.White();
 
-    for (const [key, color] of mapping.entries()) {
+    for (const [key, color] of ColorMap.entries()) {
       const mesh = this.createColor(scene, material, color);
       bubbles.set(key, mesh);
     }

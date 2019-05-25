@@ -32,11 +32,29 @@ export class Player {
       scene
     ).convertToFlatShadedMesh();
 
-    applyColors(meshTube, BABYLON.Color3.Black());
+    applyColors(meshTube, BABYLON.Color3.FromHexString(`#ddeeff`));
 
     meshTube.translate(BABYLON.Vector3.Forward(), 1);
     meshTube.rotate(BABYLON.Vector3.Left(), Math.PI / 2);
     meshTube.material = material;
+
+    const tubeBase = BABYLON.MeshBuilder.CreateCylinder(
+      "launcher.tube",
+      {
+        height: 0.75,
+        diameter: Bubble.RADIUS * 3 + 0.25,
+        tessellation: 5,
+        arc: Math.PI * 2,
+        enclose: false
+      },
+      scene
+    ).convertToFlatShadedMesh();
+
+    applyColors(tubeBase, BABYLON.Color3.FromHexString(`#ff6363`));
+
+    tubeBase.translate(BABYLON.Vector3.Forward(), 0.45);
+    tubeBase.rotate(BABYLON.Vector3.Left(), Math.PI / 2);
+    tubeBase.material = material;
 
     const meshTubeBase = BABYLON.MeshBuilder.CreateCylinder(
       "launcher.tube",
@@ -51,7 +69,7 @@ export class Player {
       scene
     ).convertToFlatShadedMesh();
 
-    applyColors(meshTubeBase, BABYLON.Color3.Black());
+    applyColors(meshTubeBase, BABYLON.Color3.FromHexString(`#131344`));
 
     meshTubeBase.translate(BABYLON.Vector3.Forward(), 1.75);
     meshTubeBase.rotate(BABYLON.Vector3.Left(), Math.PI / 2);
@@ -64,13 +82,14 @@ export class Player {
       scene
     );
     meshBase.material = material;
-
-    applyColors(meshBase, BABYLON.Color3.Red());
+    //ff8383
+    applyColors(meshBase, BABYLON.Color3.FromHexString(`#ff4343`));
 
     const mesh = new BABYLON.Mesh("launcher");
 
     mesh.addChild(meshBase);
     mesh.addChild(meshTube);
+    mesh.addChild(tubeBase);
     mesh.addChild(meshTubeBase);
 
     mesh.position.y -= 3;
