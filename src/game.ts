@@ -24,8 +24,10 @@ export class Game {
   private level: Level;
 
   private soundMusic: BABYLON.Sound;
+  private soundShoot: BABYLON.Sound;
+  private soundGameOver: BABYLON.Sound;
   private soundButton: BABYLON.Sound;
-  private soundExplode: BABYLON.Sound;
+  private soundPop: BABYLON.Sound;
 
   private gameScore: number;
 
@@ -47,8 +49,15 @@ export class Game {
       null,
       {
         loop: true,
-        autoplay: !true
+        autoplay: true
       }
+    );
+
+    this.soundGameOver = new BABYLON.Sound(
+      "sound-gameover",
+      "./audio/gameover.mp3",
+      this.scene,
+      null
     );
 
     this.soundButton = new BABYLON.Sound(
@@ -58,9 +67,16 @@ export class Game {
       null
     );
 
-    this.soundExplode = new BABYLON.Sound(
-      "sound-explode",
-      "./audio/explode.mp3",
+    this.soundShoot = new BABYLON.Sound(
+      "sound-shoot",
+      "./audio/shoot.mp3",
+      this.scene,
+      null
+    );
+
+    this.soundPop = new BABYLON.Sound(
+      "sound-pop",
+      "./audio/pop.mp3",
       this.scene,
       null
     );
@@ -85,12 +101,7 @@ export class Game {
       this.scene.render();
     });
 
-    this.VRHelper.onEnteringVRObservable.add(() => {
-      this.VRHelper.webVRCamera.position.set(0, -5, -3.75);
-    });
-    this.VRHelper.onExitingVRObservable.add(() => {
-      this.VRHelper.currentVRCamera.position.set(0, 0, -15);
-    });
+    this.VRHelper.currentVRCamera.position.set(3.75, -5, -3.75);
 
     //this.gotoMainMenu();
     this.gotoGamePlaying();
@@ -102,11 +113,15 @@ export class Game {
     const canvas = this.engine.getRenderingCanvas();
 
     camera.onControllerMeshLoadedObservable.add(() => {
-      camera.onAfterCheckInputsObservable.add(() => this.userMoveAction());
+      camera.onAfterCheckInputsObservable.add(() => {
+        if (this.userMoveAction) {
+          this.userMoveAction();
+        }
+      });
 
       camera.controllers.forEach(controller => {
         controller.onTriggerStateChangedObservable.add(eventData => {
-          if (eventData.value === 1) {
+          if (eventData.value === 1 && this.userAction) {
             this.userAction();
           }
         });
@@ -266,6 +281,8 @@ export class Game {
           bubble.getColor3()
         );
 
+        this.soundShoot.play();
+
         bubble.getMesh().onAfterWorldMatrixUpdateObservable.add(() => {
           onUpdateBubble(bubble);
         });
@@ -305,9 +322,9 @@ export class Game {
             this.gameScore += Game.SHOOT_POWER;
 
             hud.setScore(this.gameScore);
+            this.soundPop.play();
             /*
-            this.soundExplode.play();
-            */
+             */
 
             onDestroyBubble(bubble);
           })
@@ -339,6 +356,8 @@ export class Game {
   }
 
   private gotoGameOver() {
+    this.soundGameOver.play();
+
     const gameOverScreen = new GameOver();
     gameOverScreen.create(this.scene, this.gameScore);
 
@@ -346,6 +365,16 @@ export class Game {
       this.scene,
       new BABYLON.Vector3(0, 15, 0)
     );
+
+    this.setUserMoveAction(() => {
+      const [controller] = this.VRHelper.webVRCamera.controllers;
+      if (controller) {
+        gameOverScreen.place(
+          controller.devicePosition,
+          controller.getForwardRay().direction
+        );
+      }
+    });
 
     this.setUserTriggerAction(() => {
       this.soundButton.play();

@@ -10,8 +10,8 @@ import {
 import { Bubble } from "./bubble";
 import { ActionRandom } from "./queue";
 
-const LEVEL_WIDTH = 4;
-const LEVEL_DEPTH = 4;
+const LEVEL_WIDTH = 5;
+const LEVEL_DEPTH = 5;
 const LEVEL_LAYERS = 5;
 const OFFSET_X = 0.5;
 const OFFSET_Z = 0.5;
@@ -149,7 +149,7 @@ export class Level {
         -wall.position.z
       ).normalize();
 
-      var mesh = BABYLON.MeshBuilder.CreateTiledGround("Tiled Ground" + index, {
+      var mesh = BABYLON.MeshBuilder.CreateTiledGround(`level.wall.${index}`, {
         xmin: -wall.height * 0.5,
         xmax: wall.height,
         zmin: -wall.width * 0.5,

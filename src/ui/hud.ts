@@ -13,6 +13,7 @@ import {
 export class GameHUD {
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
+  private score: number = 0;
 
   private rectAttempts: GUI.Rectangle;
   private bubble: BABYLON.Mesh;
@@ -133,18 +134,17 @@ export class GameHUD {
       return;
     }
 
-    let displayValue = 0;
+    // let countReference = this.score;
 
     const counter = this.plane.onBeforeDrawObservable.add(() => {
-      displayValue = Math.min(
-        score,
-        displayValue + 1 + Math.round((score - displayValue) / 50)
-      );
-      this.textScore.text = `${displayValue}`;
+      this.score += Math.round(Math.ceil((score - this.score) / 500));
 
-      if (displayValue >= score) {
+      if (this.score >= score) {
+        this.score = score;
         this.plane.onBeforeDrawObservable.remove(counter);
       }
+
+      this.textScore.text = `${this.score}`;
     });
   }
 
