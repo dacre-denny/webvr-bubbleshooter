@@ -16,7 +16,7 @@ const LEVEL_DEPTH = 5;
 const LEVEL_LAYERS = 5;
 const OFFSET_X = 0.5;
 const OFFSET_Z = 0.5;
-const ROTATE_SPEED = 0.00125;
+const ROTATE_SPEED = 0.01;
 
 interface Wall {
   height: number;
@@ -283,7 +283,7 @@ export class Level {
     return imposters;
   }
 
-  public pluckLocalBubblesOfSameColor(key: string) {
+  public getLocalKeysOfSameColor(key: string) {
     const options = [
       [0, +1, 0],
       [0, -1, 0],
@@ -326,13 +326,13 @@ export class Level {
     };
     iterate(indicies[0], indicies[1], indicies[2]);
 
-    const bubbles = new Set<Bubble>();
+    //const bubbles = new Set<Bubble>();
 
     if (keys.size > 1) {
-      for (const key of keys) {
-        bubbles.add(this.lattice.get(key));
-        this.lattice.delete(key);
-      }
+      // for (const key of keys) {
+      //   //  bubbles.add(this.lattice.get(key));
+      //   //this.lattice.delete(key);
+      // }
 
       // Now tht plucking has happened, search for detached/derooted clusters
       {
@@ -363,14 +363,29 @@ export class Level {
 
         for (const key of Array.from(this.lattice.keys())) {
           if (!rootSet.has(key) && !!this.lattice.get(key)) {
-            bubbles.add(this.lattice.get(key));
-            this.lattice.delete(key);
+            keys.add(key);
+            // bubbles.add(this.lattice.get(key));
+            // this.lattice.delete(key);
           }
         }
       }
     }
 
-    return Array.from(bubbles);
+    return keys;
+  }
+
+  public removeBubbleByKeys(keys: Set<string>) {
+    const bubbles: Bubble[] = [];
+
+    for (const key of keys) {
+      const bubble = this.lattice.get(key);
+      if (bubble) {
+        bubbles.push(bubble);
+        this.lattice.delete(key);
+      }
+    }
+
+    return bubbles;
   }
 
   public insertBubble(bubble: Bubble) {
@@ -380,6 +395,10 @@ export class Level {
     const z = Math.round(position.z);
 
     const key = this.getKey(x, y, z);
+
+    if (this.lattice.get(key)) {
+      return;
+    }
 
     const imposter = bubble.getImposter();
     imposter.setMass(0);

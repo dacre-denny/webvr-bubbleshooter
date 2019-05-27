@@ -36,7 +36,8 @@ export class Game {
     this.engine = new BABYLON.Engine(canvas, false);
     this.scene = new BABYLON.Scene(this.engine);
 
-    this.scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
+    const AmmoJSPlugin = new BABYLON.AmmoJSPlugin();
+    this.scene.enablePhysics(BABYLON.Vector3.Zero(), AmmoJSPlugin);
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
 
     this.level = new Level();
@@ -108,8 +109,8 @@ export class Game {
       this.VRHelper.currentVRCamera.position.set(0, 0, 0);
     });
 
-    this.gotoMainMenu();
-    // this.gotoGamePlaying();
+    //this.gotoMainMenu();
+    this.gotoGamePlaying();
   }
 
   private EventConfig() {
@@ -293,7 +294,7 @@ export class Game {
         });
 
         this.level.registerCollision(bubble, () =>
-          this.scene.onBeforeRenderObservable.addOnce(() => {
+          this.scene.onAfterPhysicsObservable.addOnce(() => {
             onStoppedBubble(bubble);
             shotBubble = null;
           })
@@ -308,11 +309,13 @@ export class Game {
     const onStoppedBubble = (bubble: Bubble) => {
       // Insert bubble into level
       const insertKey = this.level.insertBubble(bubble);
-      const pluckedBubblses = this.level.pluckLocalBubblesOfSameColor(
-        insertKey
-      );
+      if (!insertKey) {
+        onDestroyBubble(bubble);
+        return;
+      }
+      const pluckedKeys = this.level.getLocalKeysOfSameColor(insertKey);
 
-      if (pluckedBubblses.length < 3) {
+      if (pluckedKeys.size < 3) {
         // If not bubbles to burst, then decrement shot attempts
         shotAttempts--;
 
@@ -323,8 +326,10 @@ export class Game {
           shotAttempts = Game.SHOT_ATTEMPTS;
         }
       } else {
+        const pluckedBubbles = this.level.removeBubbleByKeys(pluckedKeys);
+
         // If bubbles to burst have been found, add to the burst queue
-        pluckedBubblses.forEach(pluckedBubble =>
+        pluckedBubbles.forEach(pluckedBubble =>
           burstQue.add(() => {
             this.gameScore += Game.SHOOT_POWER;
 

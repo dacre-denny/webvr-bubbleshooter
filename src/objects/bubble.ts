@@ -15,8 +15,8 @@ export const ColorMap = new Map<Colors, BABYLON.Color3>([
   [Colors.BLUE, BABYLON.Color3.FromHexString(`#ceecff`)],
   [Colors.RED, BABYLON.Color3.FromHexString(`#FF8386`)],
   [Colors.GREEN, BABYLON.Color3.FromHexString(`#b6ffa6`)],
-  [Colors.YELLOW, BABYLON.Color3.FromHexString(`#fff7a6`)],
-  [Colors.ORANGE, BABYLON.Color3.FromHexString(`#F8CC8F`)],
+  [Colors.YELLOW, BABYLON.Color3.FromHexString(`#fcfe94`)],
+  [Colors.ORANGE, BABYLON.Color3.FromHexString(`#fec97a`)],
   [Colors.PURPLE, BABYLON.Color3.FromHexString(`#F8B5FF`)]
 ]);
 
