@@ -109,8 +109,7 @@ export class Game {
       this.VRHelper.currentVRCamera.position.set(0, 0, 0);
     });
 
-    //this.gotoMainMenu();
-    this.gotoGamePlaying();
+    this.gotoMainMenu();
   }
 
   private EventConfig() {
