@@ -150,20 +150,25 @@ export class Game {
 
   private showLoading() {
     const loading = new LoadingScreen(this.scene);
+    loading.create()
 
-    this.resources
-      .loadResources(percentage => {
-        loading.setPercentage(percentage);
-      })
-      .then(() => {
-        this.gotoMainMenu();
-      })
-      .catch(err => {
-        console.error(err);
-      });
+    this.resources.onFinish.clear();
+    this.resources.onProgress.clear();
+
+    this.resources.onFinish.addOnce(() => {
+      // Goto menu screen after loading screen closed
+      loading.onClose.addOnce(() => this.showMenu());
+      loading.close();
+    });
+
+    this.resources.onProgress.add(percentage => {
+      loading.setPercentage(percentage);
+    });
+
+    this.resources.loadResources();
   }
 
-  private gotoMainMenu() {
+  private showMenu() {
     this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
     const menuScreen = new MainMenu();
@@ -378,7 +383,7 @@ export class Game {
 
       gameOverScreen.close().addOnce(() => {
         confetti.stop();
-        this.gotoMainMenu();
+        this.showMenu();
       });
     });
   }

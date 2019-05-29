@@ -9,9 +9,15 @@ export class LoadingScreen {
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
   private rectPercentage: GUI.Rectangle;
+  private onCloseObservable: BABYLON.Observable<void>;
 
   constructor(scene: BABYLON.Scene) {
     this.scene = scene;
+    this.onCloseObservable = new BABYLON.Observable<void>();
+  }
+
+  public get onClose() {
+    return this.onCloseObservable;
   }
 
   public place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
@@ -33,12 +39,11 @@ export class LoadingScreen {
 
       this.texture = null;
       this.plane = null;
+      this.onCloseObservable.notifyObservers();
     });
-
-    return exitAnimationEnd;
   }
 
-  public create(scene: BABYLON.Scene) {
+  public create() {
     if (this.plane) {
       return;
     }
@@ -51,7 +56,7 @@ export class LoadingScreen {
         width: 4 * scale,
         height: 1.5 * scale
       },
-      scene
+      this.scene
     );
 
     const texture = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 400, 150, true);

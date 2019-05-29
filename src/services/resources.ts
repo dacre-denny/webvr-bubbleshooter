@@ -20,9 +20,15 @@ export class Resources {
   private scene: BABYLON.Scene;
   private assetMap: Map<string, BABYLON.Sound | BABYLON.Texture>;
   private material: BABYLON.StandardMaterial;
+  private onFinishObservable: BABYLON.Observable<void>;
+  private onProgressObservable: BABYLON.Observable<number>;
 
   constructor(scene: BABYLON.Scene) {
     this.scene = scene;
+    this.assetMap = new Map();
+    this.material = null;
+    this.onFinishObservable = new BABYLON.Observable<void>();
+    this.onProgressObservable = new BABYLON.Observable<number>();
   }
 
   private release() {
@@ -47,7 +53,7 @@ export class Resources {
     material.freeze();
   }
 
-  private async loadAssets(onProgress: (percent: number) => void) {
+  private loadAssets() {
     const assetsManager = new BABYLON.AssetsManager(this.scene);
 
     // Load sounds
@@ -55,9 +61,7 @@ export class Resources {
       const path = AssetSounds[key];
       const task = assetsManager.addBinaryFileTask(key, path);
 
-      task.onSuccess = (t: BABYLON.BinaryFileAssetTask) => {
-        this.assetMap.set(t.name, new BABYLON.Sound(t.name, t.data, this.scene));
-      };
+      task.onSuccess = (t: BABYLON.BinaryFileAssetTask) => this.assetMap.set(t.name, new BABYLON.Sound(t.name, t.data, this.scene));
     }
 
     // Load textures
@@ -70,9 +74,20 @@ export class Resources {
       };
     }
 
-    assetsManager.onProgress = (i: number, n: number) => onProgress(100 * Math.ceil((n - i) / n));
+    assetsManager.onProgress = (i: number, n: number) => {
+      this.onProgressObservable.notifyObservers(Math.ceil((100 * (n - i)) / n));
+    };
+    assetsManager.onFinish = () => this.onFinishObservable.notifyObservers();
+    assetsManager.useDefaultLoadingScreen = false;
+    assetsManager.load();
+  }
 
-    await assetsManager.loadAsync();
+  public get onFinish() {
+    return this.onFinishObservable;
+  }
+
+  public get onProgress() {
+    return this.onProgressObservable;
   }
 
   public getSound(asset: AssetSounds) {
@@ -87,11 +102,11 @@ export class Resources {
     return this.material;
   }
 
-  public async loadResources(onProgress: (percent: number) => void) {
+  public loadResources() {
     this.release();
 
     this.createMaterial();
 
-    await this.loadAssets(onProgress);
+    return this.loadAssets();
   }
 }
