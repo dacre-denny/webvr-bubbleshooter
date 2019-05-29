@@ -50,7 +50,7 @@ export class Game {
       null,
       {
         loop: true,
-        autoplay: true
+        autoplay: !true
       }
     );
 
