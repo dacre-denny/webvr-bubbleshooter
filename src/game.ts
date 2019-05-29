@@ -10,29 +10,15 @@ import { GameHUD } from "./ui/hud";
 import { MainMenu } from "./ui/menu";
 import { randomColor } from "./utilities";
 import { Assets } from "./assets";
-
-function load() {
-   
-    
-  var assetsManager = new BABYLON.AssetsManager(this.scene);
-
-  assetsManager.addBinaryFileTask(Assets.SOUND_BUTTON, Assets.SOUND_BUTTON).;
-  assetsManager.addBinaryFileTask(Assets.SOUND_GAMEOVER, Assets.SOUND_GAMEOVER);
-  assetsManager.addBinaryFileTask(Assets.SOUND_MUSIC, Assets.SOUND_MUSIC);
-  assetsManager.addBinaryFileTask(Assets.SOUND_POP, Assets.SOUND_POP);
-  assetsManager.addBinaryFileTask(Assets.SOUND_SHOOT, Assets.SOUND_SHOOT);
-
-  assetsManager.load();
-
-  assetsManager.onFinish = () => {
-    this.gotoMainMenu()
-  };
-}
+import { Resources } from "./services/resources";
+import { LoadingScreen } from "./ui/loading";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 4;
   static readonly SCORE_INCREMENT = 10;
+
+  private resources: Resources;
 
   private userAction: (event?: MouseEvent) => void;
   private userMoveAction: (event?: MouseEvent) => void;
@@ -64,6 +50,7 @@ export class Game {
       false
     );
     this.scene = new BABYLON.Scene(this.engine);
+    this.resources = new Resources(this.scene);
 
     const AmmoJSPlugin = new BABYLON.AmmoJSPlugin();
     this.scene.enablePhysics(BABYLON.Vector3.Zero(), AmmoJSPlugin);
@@ -109,12 +96,10 @@ export class Game {
       this.VRHelper.currentVRCamera.position.set(0, 0, 0);
     });
 
-    this.gotoMainMenu();
+    this.showLoading();
   }
 
-  private createServices() {
-
-  }
+  private createServices() {}
 
   private EventConfig() {
     const { VRHelper } = this;
@@ -163,23 +148,19 @@ export class Game {
     this.userAction = callback;
   }
 
-  private gotoLoading() {
+  private showLoading() {
+    const loading = new LoadingScreen(this.scene);
 
-    function
-    
-    var assetsManager = new BABYLON.AssetsManager(this.scene);
-
-    assetsManager.addBinaryFileTask(Assets.SOUND_BUTTON, Assets.SOUND_BUTTON).;
-    assetsManager.addBinaryFileTask(Assets.SOUND_GAMEOVER, Assets.SOUND_GAMEOVER);
-    assetsManager.addBinaryFileTask(Assets.SOUND_MUSIC, Assets.SOUND_MUSIC);
-    assetsManager.addBinaryFileTask(Assets.SOUND_POP, Assets.SOUND_POP);
-    assetsManager.addBinaryFileTask(Assets.SOUND_SHOOT, Assets.SOUND_SHOOT);
-
-    assetsManager.load();
-
-    assetsManager.onFinish = () => {
-      this.gotoMainMenu()
-    };
+    this.resources
+      .loadResources(percentage => {
+        loading.setPercentage(percentage);
+      })
+      .then(() => {
+        this.gotoMainMenu();
+      })
+      .catch(err => {
+        console.error(err);
+      });
   }
 
   private gotoMainMenu() {

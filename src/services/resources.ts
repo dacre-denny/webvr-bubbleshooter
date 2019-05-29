@@ -1,8 +1,5 @@
 import * as BABYLON from "babylonjs";
 
-type SoundAsset = Record<string, BABYLON.Sound>;
-type TextureAsset = Record<string, BABYLON.Texture>;
-
 export enum AssetSounds {
   SOUND_MUSIC = "./audio/music.mp3",
   SOUND_BUTTON = "./audio/button.mp3",
@@ -50,7 +47,7 @@ export class Resources {
     material.freeze();
   }
 
-  private async loadAssets() {
+  private async loadAssets(onProgress: (percent: number) => void) {
     const assetsManager = new BABYLON.AssetsManager(this.scene);
 
     // Load sounds
@@ -73,6 +70,8 @@ export class Resources {
       };
     }
 
+    assetsManager.onProgress = (i: number, n: number) => onProgress(100 * Math.ceil((n - i) / n));
+
     await assetsManager.loadAsync();
   }
 
@@ -88,11 +87,11 @@ export class Resources {
     return this.material;
   }
 
-  public async loadResources() {
+  public async loadResources(onProgress: (percent: number) => void) {
     this.release();
 
     this.createMaterial();
 
-    await this.loadAssets();
+    await this.loadAssets(onProgress);
   }
 }
