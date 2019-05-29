@@ -11,6 +11,24 @@ import { MainMenu } from "./ui/menu";
 import { randomColor } from "./utilities";
 import { Assets } from "./assets";
 
+function load() {
+   
+    
+  var assetsManager = new BABYLON.AssetsManager(this.scene);
+
+  assetsManager.addBinaryFileTask(Assets.SOUND_BUTTON, Assets.SOUND_BUTTON).;
+  assetsManager.addBinaryFileTask(Assets.SOUND_GAMEOVER, Assets.SOUND_GAMEOVER);
+  assetsManager.addBinaryFileTask(Assets.SOUND_MUSIC, Assets.SOUND_MUSIC);
+  assetsManager.addBinaryFileTask(Assets.SOUND_POP, Assets.SOUND_POP);
+  assetsManager.addBinaryFileTask(Assets.SOUND_SHOOT, Assets.SOUND_SHOOT);
+
+  assetsManager.load();
+
+  assetsManager.onFinish = () => {
+    this.gotoMainMenu()
+  };
+}
+
 export class Game {
   static readonly SHOOT_POWER = 10;
   static readonly SHOT_ATTEMPTS = 4;
@@ -34,54 +52,40 @@ export class Game {
 
   constructor(canvasElement: string) {
     const canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
-    this.engine = new BABYLON.Engine(canvas, false);
+    this.engine = new BABYLON.Engine(
+      canvas,
+      false,
+      {
+        antialias: false,
+        autoEnableWebVR: true,
+        disableWebGL2Support: true,
+        useHighPrecisionFloats: false
+      },
+      false
+    );
     this.scene = new BABYLON.Scene(this.engine);
 
     const AmmoJSPlugin = new BABYLON.AmmoJSPlugin();
     this.scene.enablePhysics(BABYLON.Vector3.Zero(), AmmoJSPlugin);
     this.scene.getPhysicsEngine().setGravity(new BABYLON.Vector3(0, 0, 0));
+    this.scene.autoClear = false;
+    this.scene.autoClearDepthAndStencil = false;
 
     this.level = new Level();
     this.player = new Player();
 
-    this.soundMusic = new BABYLON.Sound(
-      "sound-music",
-      Assets.SOUND_MUSIC,
-      this.scene,
-      null,
-      {
-        loop: true,
-        autoplay: !true
-      }
-    );
+    this.soundMusic = new BABYLON.Sound("sound-music", Assets.SOUND_MUSIC, this.scene, null, {
+      loop: true,
+      autoplay: !true
+    });
 
-    this.soundGameOver = new BABYLON.Sound(
-      "sound-gameover",
-      Assets.SOUND_GAMEOVER,
-      this.scene,
-      null
-    );
+    this.soundGameOver = new BABYLON.Sound("sound-gameover", Assets.SOUND_GAMEOVER, this.scene, null);
 
-    this.soundButton = new BABYLON.Sound(
-      "sound-button",
-      Assets.SOUND_BUTTON,
-      this.scene,
-      null
-    );
+    this.soundButton = new BABYLON.Sound("sound-button", Assets.SOUND_BUTTON, this.scene, null);
 
-    this.soundShoot = new BABYLON.Sound(
-      "sound-shoot",
-      Assets.SOUND_SHOOT,
-      this.scene,
-      null
-    );
+    this.soundShoot = new BABYLON.Sound("sound-shoot", Assets.SOUND_SHOOT, this.scene, null);
 
-    this.soundPop = new BABYLON.Sound(
-      "sound-pop",
-      Assets.SOUND_POP,
-      this.scene,
-      null
-    );
+    this.soundPop = new BABYLON.Sound("sound-pop", Assets.SOUND_POP, this.scene, null);
 
     this.VRHelper = this.scene.createDefaultVRExperience({
       createDeviceOrientationCamera: true,
@@ -93,11 +97,6 @@ export class Game {
 
     this.level.create(this.scene);
     this.player.create(this.scene);
-
-    // The canvas/window resize event handler.
-    window.addEventListener("resize", () => {
-      this.engine.resize();
-    });
 
     this.engine.runRenderLoop(() => {
       this.scene.render();
@@ -113,10 +112,19 @@ export class Game {
     this.gotoMainMenu();
   }
 
+  private createServices() {
+
+  }
+
   private EventConfig() {
     const { VRHelper } = this;
     const camera = VRHelper.webVRCamera;
     const canvas = this.engine.getRenderingCanvas();
+
+    // The canvas/window resize event handler.
+    window.addEventListener("resize", () => {
+      this.engine.resize();
+    });
 
     camera.onControllerMeshLoadedObservable.add(() => {
       camera.onAfterCheckInputsObservable.add(() => {
@@ -155,6 +163,25 @@ export class Game {
     this.userAction = callback;
   }
 
+  private gotoLoading() {
+
+    function
+    
+    var assetsManager = new BABYLON.AssetsManager(this.scene);
+
+    assetsManager.addBinaryFileTask(Assets.SOUND_BUTTON, Assets.SOUND_BUTTON).;
+    assetsManager.addBinaryFileTask(Assets.SOUND_GAMEOVER, Assets.SOUND_GAMEOVER);
+    assetsManager.addBinaryFileTask(Assets.SOUND_MUSIC, Assets.SOUND_MUSIC);
+    assetsManager.addBinaryFileTask(Assets.SOUND_POP, Assets.SOUND_POP);
+    assetsManager.addBinaryFileTask(Assets.SOUND_SHOOT, Assets.SOUND_SHOOT);
+
+    assetsManager.load();
+
+    assetsManager.onFinish = () => {
+      this.gotoMainMenu()
+    };
+  }
+
   private gotoMainMenu() {
     this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
@@ -172,10 +199,7 @@ export class Game {
     this.setUserMoveAction(() => {
       const [controller] = this.VRHelper.webVRCamera.controllers;
       if (controller) {
-        menuScreen.place(
-          controller.devicePosition,
-          controller.getForwardRay().direction
-        );
+        menuScreen.place(controller.devicePosition, controller.getForwardRay().direction);
       }
     });
   }
@@ -235,11 +259,7 @@ export class Game {
 
           hud.place(controller.devicePosition, ray.direction);
 
-          const pickingInfo = this.scene.pickWithRay(
-            ray,
-            (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m),
-            false
-          );
+          const pickingInfo = this.scene.pickWithRay(ray, (m: BABYLON.AbstractMesh) => Bubble.isBubble(m) || Level.isWall(m), false);
 
           if (pickingInfo.hit) {
             const target = pickingInfo.pickedPoint;
@@ -262,12 +282,7 @@ export class Game {
     };
 
     const onUpdateBubble = (bubble: Bubble) => {
-      if (
-        BABYLON.Vector3.Distance(
-          bubble.getPosition(),
-          this.player.getPosition()
-        ) > 20
-      ) {
+      if (BABYLON.Vector3.Distance(bubble.getPosition(), this.player.getPosition()) > 20) {
         this.scene.onBeforeRenderObservable.addOnce(() => {
           onDestroyBubble(bubble);
           this.setUserTriggerAction(onShootBubble);
@@ -280,12 +295,7 @@ export class Game {
         const bubble = bubbleFactory.createBubble(nextBubbleColor);
         bubble.setPosition(this.player.getPosition());
         bubble.setVelocity(this.player.getDirection().scale(Game.SHOOT_POWER));
-        Particles.createShoot(
-          this.scene,
-          this.player.getPosition().add(this.player.getDirection().scale(2)),
-          this.player.getDirection(),
-          bubble.getColor3()
-        );
+        Particles.createShoot(this.scene, this.player.getPosition().add(this.player.getDirection().scale(2)), this.player.getDirection(), bubble.getColor3());
 
         this.soundShoot.play();
 
@@ -373,18 +383,12 @@ export class Game {
     const gameOverScreen = new GameOver();
     gameOverScreen.create(this.scene, this.gameScore);
 
-    const confetti = Particles.createConfetti(
-      this.scene,
-      new BABYLON.Vector3(0, 15, 0)
-    );
+    const confetti = Particles.createConfetti(this.scene, new BABYLON.Vector3(0, 15, 0));
 
     this.setUserMoveAction(() => {
       const [controller] = this.VRHelper.webVRCamera.controllers;
       if (controller) {
-        gameOverScreen.place(
-          controller.devicePosition,
-          controller.getForwardRay().direction
-        );
+        gameOverScreen.place(controller.devicePosition, controller.getForwardRay().direction);
       }
     });
 
