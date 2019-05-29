@@ -9,6 +9,7 @@ import { GameOver } from "./ui/gameover";
 import { GameHUD } from "./ui/hud";
 import { MainMenu } from "./ui/menu";
 import { randomColor } from "./utilities";
+import { Assets } from "./assets";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -45,7 +46,7 @@ export class Game {
 
     this.soundMusic = new BABYLON.Sound(
       "sound-music",
-      "./audio/music.mp3",
+      Assets.SOUND_MUSIC,
       this.scene,
       null,
       {
@@ -56,28 +57,28 @@ export class Game {
 
     this.soundGameOver = new BABYLON.Sound(
       "sound-gameover",
-      "./audio/gameover.mp3",
+      Assets.SOUND_GAMEOVER,
       this.scene,
       null
     );
 
     this.soundButton = new BABYLON.Sound(
       "sound-button",
-      "./audio/button.mp3",
+      Assets.SOUND_BUTTON,
       this.scene,
       null
     );
 
     this.soundShoot = new BABYLON.Sound(
       "sound-shoot",
-      "./audio/shoot.mp3",
+      Assets.SOUND_SHOOT,
       this.scene,
       null
     );
 
     this.soundPop = new BABYLON.Sound(
       "sound-pop",
-      "./audio/pop.mp3",
+      Assets.SOUND_POP,
       this.scene,
       null
     );
