@@ -16,28 +16,41 @@ export enum AssetTextures {
   IMAGE_GAMETITLE = "./images/game-title.png"
 }
 
-type AssetTypes = Record<keyof AssetSounds, BABYLON.Sound>;
-
 /**
- * The asset class provides a common/shared service for asset access throughout the app
+ * The resources class provides a common/shared service for asset and resource access throughout the app
  */
-export class Assets<K extends string, T> {
+export class Resources {
   private scene: BABYLON.Scene;
-  private assetMap: Map<string, any>;
+  private assetMap: Map<string, BABYLON.Sound | BABYLON.Texture>;
+  private material: BABYLON.StandardMaterial;
 
   constructor(scene: BABYLON.Scene) {
     this.scene = scene;
   }
 
-  public getAsset(asset: K): T {
-    return;
-  }
-
-  public async loadAllAssets() {
-    for (const asset of this.assetMap.values()) {
-      /// dispose
+  private release() {
+    if (this.material) {
+      this.material.dispose();
+      this.material = null;
     }
 
+    // Release asset resources
+    for (const asset of this.assetMap.values()) {
+      asset.dispose();
+    }
+    this.assetMap.clear();
+  }
+
+  private createMaterial() {
+    const material = new BABYLON.StandardMaterial("material", this.scene);
+    material.diffuseColor = BABYLON.Color3.White();
+    material.emissiveColor = BABYLON.Color3.White();
+    material.disableLighting = true;
+    material.fogEnabled = false;
+    material.freeze();
+  }
+
+  private async loadAssets() {
     const assetsManager = new BABYLON.AssetsManager(this.scene);
 
     // Load sounds
@@ -61,5 +74,25 @@ export class Assets<K extends string, T> {
     }
 
     await assetsManager.loadAsync();
+  }
+
+  public getSound(asset: AssetSounds) {
+    return this.assetMap.get(asset) as BABYLON.Sound;
+  }
+
+  public getTexture(asset: AssetTextures) {
+    return this.assetMap.get(asset) as BABYLON.Texture;
+  }
+
+  public getMaterial() {
+    return this.material;
+  }
+
+  public async loadResources() {
+    this.release();
+
+    this.createMaterial();
+
+    await this.loadAssets();
   }
 }
