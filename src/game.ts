@@ -5,7 +5,7 @@ import { Level } from "./objects/level";
 import { Particles } from "./objects/particles";
 import { Player } from "./objects/player";
 import { ActionQueue } from "./objects/queue";
-import { MenuGUI, HUDGUI, GameOverGUI, LoadingGUI } from "./screens";
+import { MenuGUI, HUDGUI, GameOverGUI, LoadingGUI } from "./gui";
 import { randomColor } from "./utilities";
 import { Assets } from "./assets";
 import { Resources, AssetSounds } from "./services/resources";
@@ -28,10 +28,8 @@ export class Game {
   private player: Player;
   private level: Level;
 
-  private soundMusic: BABYLON.Sound;
-  private soundShoot: BABYLON.Sound;
-  private soundButton: BABYLON.Sound;
-  private soundPop: BABYLON.Sound;
+  // private soundShoot: BABYLON.Sound;
+  // private soundPop: BABYLON.Sound;
 
   private gameScore: number;
 
@@ -60,18 +58,11 @@ export class Game {
     this.level = new Level();
     this.player = new Player();
 
-    this.soundMusic = new BABYLON.Sound("sound-music", Assets.SOUND_MUSIC, this.scene, null, {
-      loop: true,
-      autoplay: !true
-    });
-
     //this.soundGameOver = new BABYLON.Sound("sound-gameover", Assets.SOUND_GAMEOVER, this.scene, null);
 
-    this.soundButton = new BABYLON.Sound("sound-button", Assets.SOUND_BUTTON, this.scene, null);
+    // this.soundShoot = new BABYLON.Sound("sound-shoot", Assets.SOUND_SHOOT, this.scene, null);
 
-    this.soundShoot = new BABYLON.Sound("sound-shoot", Assets.SOUND_SHOOT, this.scene, null);
-
-    this.soundPop = new BABYLON.Sound("sound-pop", Assets.SOUND_POP, this.scene, null);
+    // this.soundPop = new BABYLON.Sound("sound-pop", Assets.SOUND_POP, this.scene, null);
 
     this.VRHelper = this.scene.createDefaultVRExperience({
       createDeviceOrientationCamera: true,
@@ -138,7 +129,13 @@ export class Game {
   private showLoading() {
     // Create and display loading GUI
     const loading = new LoadingGUI(this.scene, this.resources);
-    loading.onClose.addOnce(() => this.showMenu());
+    loading.onClose.addOnce(() => {
+      const music = this.resources.getSound(AssetSounds.SOUND_MUSIC);
+      music.loop = true;
+      music.play();
+
+      this.showMenu();
+    });
     loading.open();
 
     // Reset and bind loading menu placement to user movement
@@ -263,7 +260,7 @@ export class Game {
         bubble.setVelocity(this.player.getDirection().scale(Game.SHOOT_POWER));
         Particles.createShoot(this.scene, this.player.getPosition().add(this.player.getDirection().scale(2)), this.player.getDirection(), bubble.getColor3());
 
-        this.soundShoot.play();
+        this.resources.getSound(AssetSounds.SOUND_SHOOT).play();
 
         bubble.getMesh().onAfterWorldMatrixUpdateObservable.add(() => {
           onUpdateBubble(bubble);
@@ -310,7 +307,7 @@ export class Game {
             this.gameScore += Game.SHOOT_POWER;
 
             hud.setScore(this.gameScore);
-            this.soundPop.play();
+            this.resources.getSound(AssetSounds.SOUND_POP).play();
 
             onDestroyBubble(pluckedBubble);
           })
