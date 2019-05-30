@@ -1,14 +1,9 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
-import {
-  createAnimationExit,
-  createTextBlock,
-  createAnimationEnter,
-  createGlass
-} from "../utilities";
+import { createAnimationExit, createTextBlock, createAnimationEnter, createGlass } from "../utilities";
 import { Theme, Assets } from "../assets";
 
-export class MainMenu {
+export class MenuGUI {
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
 
@@ -22,8 +17,7 @@ export class MainMenu {
       return;
     }
 
-    const exitAnimationEnd = createAnimationExit("scaling", this.plane)
-      .onAnimationEndObservable;
+    const exitAnimationEnd = createAnimationExit("scaling", this.plane).onAnimationEndObservable;
 
     exitAnimationEnd.add(() => {
       this.texture.dispose();
@@ -50,12 +44,7 @@ export class MainMenu {
       scene
     );
     plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
-    const texture = GUI.AdvancedDynamicTexture.CreateForMesh(
-      plane,
-      800,
-      800,
-      true
-    );
+    const texture = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 800, 800, true);
 
     var panel = new GUI.StackPanel("panel");
     panel.heightInPixels = 300;
@@ -70,9 +59,7 @@ export class MainMenu {
       panel.addControl(title);
     }
 
-    panel.addControl(
-      createTextBlock(`Pull trigger to play!`, 20, Theme.COLOR_BLUE)
-    );
+    panel.addControl(createTextBlock(`Pull trigger to play!`, 20, Theme.COLOR_BLUE));
     {
       const glass = createGlass();
       glass.height = "70%";
@@ -83,24 +70,20 @@ export class MainMenu {
 
     texture.addControl(panel);
 
-    const position = new BABYLON.Vector3()
-      .addInPlace(BABYLON.Vector3.Up())
-      .addInPlace(BABYLON.Vector3.Forward().scale(6));
+    const position = new BABYLON.Vector3().addInPlace(BABYLON.Vector3.Up()).addInPlace(BABYLON.Vector3.Forward().scale(6));
 
     plane.setDirection(BABYLON.Vector3.Forward());
     plane.position.copyFrom(position);
 
-    createAnimationEnter("scaling", plane).onAnimationEndObservable.addOnce(
-      () => {
-        plane.onBeforeRenderObservable.add(() => {
-          const time = Date.now() / 500;
-          const scale = 1 + Math.sin(time) * 0.05;
-          title.scaleX = scale;
-          title.scaleY = scale;
-          title.rotation = Math.sin(time * 0.3) * 0.05;
-        });
-      }
-    );
+    createAnimationEnter("scaling", plane).onAnimationEndObservable.addOnce(() => {
+      plane.onBeforeRenderObservable.add(() => {
+        const time = Date.now() / 500;
+        const scale = 1 + Math.sin(time) * 0.05;
+        title.scaleX = scale;
+        title.scaleY = scale;
+        title.rotation = Math.sin(time * 0.3) * 0.05;
+      });
+    });
 
     this.texture = texture;
     this.plane = plane;

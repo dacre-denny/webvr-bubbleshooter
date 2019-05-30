@@ -5,13 +5,10 @@ import { Level } from "./objects/level";
 import { Particles } from "./objects/particles";
 import { Player } from "./objects/player";
 import { ActionQueue } from "./objects/queue";
-import { GameOver } from "./ui/gameover";
-import { GameHUD } from "./ui/hud";
-import { MainMenu } from "./ui/menu";
+import { MenuGUI, HUDGUI, GameOverGUI, LoadingGUI } from "./screens";
 import { randomColor } from "./utilities";
 import { Assets } from "./assets";
 import { Resources } from "./services/resources";
-import { LoadingScreen } from "./ui/loading";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -19,6 +16,8 @@ export class Game {
   static readonly SCORE_INCREMENT = 10;
 
   private resources: Resources;
+
+  
 
   private userAction: (event?: MouseEvent) => void;
   private userMoveAction: (event?: MouseEvent) => void;
@@ -149,8 +148,8 @@ export class Game {
   }
 
   private showLoading() {
-    const loading = new LoadingScreen(this.scene);
-    loading.create()
+    const loading = new LoadingGUI(this.scene);
+    loading.create();
 
     this.resources.onFinish.clear();
     this.resources.onProgress.clear();
@@ -171,13 +170,13 @@ export class Game {
   private showMenu() {
     this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
-    const menuScreen = new MainMenu();
-    menuScreen.create(this.scene);
+    const Menu = new MenuGUI();
+    Menu.create(this.scene);
 
     this.setUserTriggerAction(() => {
       this.soundButton.play();
 
-      menuScreen.close().addOnce(() => {
+      Menu.close().addOnce(() => {
         this.gotoGamePlaying();
       });
     });
@@ -185,7 +184,7 @@ export class Game {
     this.setUserMoveAction(() => {
       const [controller] = this.VRHelper.webVRCamera.controllers;
       if (controller) {
-        menuScreen.place(controller.devicePosition, controller.getForwardRay().direction);
+        Menu.place(controller.devicePosition, controller.getForwardRay().direction);
       }
     });
   }
@@ -203,7 +202,7 @@ export class Game {
     const VRHelper = this.VRHelper;
     const camera = VRHelper.webVRCamera;
     const burstQue = new ActionQueue();
-    const hud = new GameHUD();
+    const hud = new HUDGUI();
 
     const canShootBubble = () => {
       if (shotBubble !== null) {
@@ -366,7 +365,7 @@ export class Game {
   private gotoGameOver() {
     this.soundGameOver.play();
 
-    const gameOverScreen = new GameOver();
+    const gameOverScreen = new GameOverGUI();
     gameOverScreen.create(this.scene, this.gameScore);
 
     const confetti = Particles.createConfetti(this.scene, new BABYLON.Vector3(0, 15, 0));

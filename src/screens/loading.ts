@@ -4,7 +4,7 @@ import { Theme } from "../assets";
 import { Colors, ColorMap } from "../objects/bubble";
 import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock, applyColors } from "../utilities";
 
-export class LoadingScreen {
+export class LoadingGUI {
   private scene: BABYLON.Scene;
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;

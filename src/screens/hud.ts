@@ -2,15 +2,9 @@ import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Theme } from "../assets";
 import { Colors, ColorMap } from "../objects/bubble";
-import {
-  createAnimationEnter,
-  createAnimationExit,
-  createGlass,
-  createTextBlock,
-  applyColors
-} from "../utilities";
+import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock, applyColors } from "../utilities";
 
-export class GameHUD {
+export class HUDGUI {
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
   private score: number = 0;
@@ -23,9 +17,7 @@ export class GameHUD {
   public place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
     this.plane.setDirection(direction);
 
-    this.plane.position.copyFrom(
-      position.add(direction.scale(2).add(this.plane.up.scale(-1)))
-    );
+    this.plane.position.copyFrom(position.add(direction.scale(2).add(this.plane.up.scale(-1))));
   }
 
   public close() {
@@ -33,8 +25,7 @@ export class GameHUD {
       return;
     }
 
-    const exitAnimationEnd = createAnimationExit("scaling", this.plane)
-      .onAnimationEndObservable;
+    const exitAnimationEnd = createAnimationExit("scaling", this.plane).onAnimationEndObservable;
 
     exitAnimationEnd.add(() => {
       this.texture.dispose();
@@ -63,12 +54,7 @@ export class GameHUD {
       scene
     );
 
-    const texture = GUI.AdvancedDynamicTexture.CreateForMesh(
-      plane,
-      400,
-      150,
-      true
-    );
+    const texture = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 400, 150, true);
 
     var panel = new GUI.StackPanel("panel");
     panel.heightInPixels = 150;
@@ -118,9 +104,7 @@ export class GameHUD {
       this.rectAttempts = rectAttempts;
     }
 
-    const position = new BABYLON.Vector3()
-      .addInPlace(BABYLON.Vector3.Up())
-      .addInPlace(BABYLON.Vector3.Forward().scale(6));
+    const position = new BABYLON.Vector3().addInPlace(BABYLON.Vector3.Up()).addInPlace(BABYLON.Vector3.Forward().scale(6));
 
     plane.setDirection(BABYLON.Vector3.Forward());
     plane.position.copyFrom(position);
@@ -170,11 +154,7 @@ export class GameHUD {
 
       sphere.onBeforeDrawObservable.add(() => {
         const p = 0.01; // Date.now() / 10000;
-        const a = new BABYLON.Vector3(
-          Math.sin(p),
-          Math.cos(p * 0.7),
-          Math.cos(p * 0.4)
-        ).normalize();
+        const a = new BABYLON.Vector3(Math.sin(p), Math.cos(p * 0.7), Math.cos(p * 0.4)).normalize();
 
         sphere.rotate(a, 0.05);
       });
@@ -194,10 +174,7 @@ export class GameHUD {
     };
 
     if (this.bubble) {
-      createAnimationExit(
-        "scaling",
-        this.bubble
-      ).onAnimationEndObservable.addOnce(() => {
+      createAnimationExit("scaling", this.bubble).onAnimationEndObservable.addOnce(() => {
         this.plane.removeChild(this.bubble);
         this.bubble.dispose();
         this.bubble = null;

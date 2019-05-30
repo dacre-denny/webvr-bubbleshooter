@@ -1,14 +1,9 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Assets, Theme } from "../assets";
-import {
-  createAnimationEnter,
-  createAnimationExit,
-  createTextBlock,
-  createGlass
-} from "../utilities";
+import { createAnimationEnter, createAnimationExit, createTextBlock, createGlass } from "../utilities";
 
-export class GameOver {
+export class GameOverGUI {
   private texture: GUI.AdvancedDynamicTexture;
   private plane: BABYLON.Mesh;
 
@@ -22,8 +17,7 @@ export class GameOver {
       return;
     }
 
-    const exitAnimationEnd = createAnimationExit("scaling", this.plane)
-      .onAnimationEndObservable;
+    const exitAnimationEnd = createAnimationExit("scaling", this.plane).onAnimationEndObservable;
 
     exitAnimationEnd.add(() => {
       this.texture.dispose();
@@ -50,12 +44,7 @@ export class GameOver {
       scene
     );
     plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
-    const texture = GUI.AdvancedDynamicTexture.CreateForMesh(
-      plane,
-      800,
-      800,
-      true
-    );
+    const texture = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 800, 800, true);
 
     var panel = new GUI.StackPanel("panel");
     panel.heightInPixels = 300;
@@ -71,9 +60,7 @@ export class GameOver {
     panel.addControl(title);
     panel.addControl(createTextBlock(`Your scope`, 20, Theme.COLOR_BLUE));
     panel.addControl(textScoreNumber);
-    panel.addControl(
-      createTextBlock(`Pull trigger to continue`, 20, Theme.COLOR_BLUE)
-    );
+    panel.addControl(createTextBlock(`Pull trigger to continue`, 20, Theme.COLOR_BLUE));
 
     const glass = createGlass();
     glass.paddingTop = "15%";
@@ -82,31 +69,24 @@ export class GameOver {
 
     texture.addControl(panel);
 
-    const position = new BABYLON.Vector3()
-      .addInPlace(BABYLON.Vector3.Up())
-      .addInPlace(BABYLON.Vector3.Forward().scale(6));
+    const position = new BABYLON.Vector3().addInPlace(BABYLON.Vector3.Up()).addInPlace(BABYLON.Vector3.Forward().scale(6));
 
     plane.setDirection(BABYLON.Vector3.Forward());
     plane.position.copyFrom(position);
 
-    createAnimationEnter("scaling", plane).onAnimationEndObservable.addOnce(
-      () => {
-        let displayScore = 0;
+    createAnimationEnter("scaling", plane).onAnimationEndObservable.addOnce(() => {
+      let displayScore = 0;
 
-        plane.onBeforeDrawObservable.add(() => {
-          displayScore = Math.min(
-            score,
-            displayScore + 1 + Math.round((score - displayScore) / 50)
-          );
+      plane.onBeforeDrawObservable.add(() => {
+        displayScore = Math.min(score, displayScore + 1 + Math.round((score - displayScore) / 50));
 
-          textScoreNumber.text = `${displayScore}`;
+        textScoreNumber.text = `${displayScore}`;
 
-          if (displayScore >= score) {
-            plane.onBeforeDrawObservable.clear();
-          }
-        });
-      }
-    );
+        if (displayScore >= score) {
+          plane.onBeforeDrawObservable.clear();
+        }
+      });
+    });
 
     this.texture = texture;
     this.plane = plane;
