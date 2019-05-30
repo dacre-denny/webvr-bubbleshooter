@@ -205,7 +205,7 @@ export class Game {
     const VRHelper = this.VRHelper;
     const camera = VRHelper.webVRCamera;
     const burstQue = new ActionQueue();
-    const hud = new HUDGUI();
+    const hud = new HUDGUI(this.scene, this.resources);
 
     const canShootBubble = () => {
       if (shotBubble !== null) {
@@ -339,7 +339,7 @@ export class Game {
     // this.setUserTriggerAction(onShootBubble);
     // this.setUserMoveAction(onUpdatePlayer);
 
-    hud.create(this.scene);
+    hud.open();
     hud.setBubble(nextBubbleColor);
     hud.setScore(this.gameScore);
     hud.setLevel(100);

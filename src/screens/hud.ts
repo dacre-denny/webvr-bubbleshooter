@@ -3,10 +3,9 @@ import * as GUI from "babylonjs-gui";
 import { Theme } from "../assets";
 import { Colors, ColorMap } from "../objects/bubble";
 import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock, applyColors } from "../utilities";
+import { AbstractGUI } from "./gui";
 
-export class HUDGUI {
-  private texture: GUI.AdvancedDynamicTexture;
-  private plane: BABYLON.Mesh;
+export class HUDGUI extends AbstractGUI {
   private score: number = 0;
 
   private glass: GUI.Rectangle;
@@ -37,7 +36,7 @@ export class HUDGUI {
     return exitAnimationEnd;
   }
 
-  public create(scene: BABYLON.Scene) {
+  public open() {
     if (this.plane) {
       return;
     }
@@ -50,7 +49,7 @@ export class HUDGUI {
         width: 4 * scale,
         height: 1.5 * scale
       },
-      scene
+      this.scene
     );
 
     const texture = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 400, 150, true);
