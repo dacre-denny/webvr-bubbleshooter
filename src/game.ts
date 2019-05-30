@@ -1,14 +1,13 @@
 import * as BABYLON from "babylonjs";
 import { BubbleFactory } from "./bubbleFactory";
+import { GameOverGUI, HUDGUI, LoadingGUI, MenuGUI } from "./gui";
 import { Bubble } from "./objects/bubble";
 import { Level } from "./objects/level";
 import { Particles } from "./objects/particles";
 import { Player } from "./objects/player";
 import { ActionQueue } from "./objects/queue";
-import { MenuGUI, HUDGUI, GameOverGUI, LoadingGUI } from "./gui";
+import { AssetSounds, Resources } from "./services/resources";
 import { randomColor } from "./utilities";
-import { Assets } from "./assets";
-import { Resources, AssetSounds } from "./services/resources";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -20,16 +19,11 @@ export class Game {
   private onUserMoveObservable = new BABYLON.Observable<BABYLON.Ray>();
   private onUserTriggerObservable = new BABYLON.Observable<void>();
 
-  // private userAction: (event?: MouseEvent) => void;
-  // private userMoveAction: (event?: MouseEvent) => void;
   private engine: BABYLON.Engine;
   private VRHelper: BABYLON.VRExperienceHelper;
   private scene: BABYLON.Scene;
   private player: Player;
   private level: Level;
-
-  // private soundShoot: BABYLON.Sound;
-  // private soundPop: BABYLON.Sound;
 
   private gameScore: number;
 
@@ -57,12 +51,6 @@ export class Game {
 
     this.level = new Level();
     this.player = new Player();
-
-    //this.soundGameOver = new BABYLON.Sound("sound-gameover", Assets.SOUND_GAMEOVER, this.scene, null);
-
-    // this.soundShoot = new BABYLON.Sound("sound-shoot", Assets.SOUND_SHOOT, this.scene, null);
-
-    // this.soundPop = new BABYLON.Sound("sound-pop", Assets.SOUND_POP, this.scene, null);
 
     this.VRHelper = this.scene.createDefaultVRExperience({
       createDeviceOrientationCamera: true,
@@ -130,6 +118,7 @@ export class Game {
     // Create and display loading GUI
     const loading = new LoadingGUI(this.scene, this.resources);
     loading.onClose.addOnce(() => {
+      // Configure background music
       const music = this.resources.getSound(AssetSounds.SOUND_MUSIC);
       music.loop = true;
       music.play();
@@ -217,11 +206,6 @@ export class Game {
     const onCleanUp = () => {
       this.onUserMoveObservable.clear();
       this.onUserTriggerObservable.clear();
-
-      // Clean up event binding
-      // window.removeEventListener("mousemove", onUpdatePlayer);
-      // this.setUserTriggerAction(null);
-      // this.setUserMoveAction(null);
     };
 
     const onUpdatePlayer = (ray: BABYLON.Ray) => {
@@ -333,8 +317,6 @@ export class Game {
 
     this.onUserMoveObservable.add(onUpdatePlayer);
     this.onUserTriggerObservable.add(onShootBubble);
-    // this.setUserTriggerAction(onShootBubble);
-    // this.setUserMoveAction(onUpdatePlayer);
 
     hud.open();
     hud.setBubble(nextBubbleColor);
