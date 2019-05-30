@@ -2,12 +2,33 @@ import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Assets, Theme } from "../assets";
 import { createAnimationEnter, createAnimationExit, createTextBlock, createGlass } from "../utilities";
+import { Resources, AssetSounds } from "../services/resources";
 
 export class GameOverGUI {
   private texture: GUI.AdvancedDynamicTexture;
+  private textScoreNumber: GUI.TextBlock;
   private plane: BABYLON.Mesh;
 
-  public place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
+  private scene: BABYLON.Scene;
+  private resource: Resources;
+  private onCloseObservable: BABYLON.Observable<void>;
+
+  constructor(scene: BABYLON.Scene, resource: Resources) {
+    this.scene = scene;
+    this.resource = resource;
+    this.onCloseObservable = new BABYLON.Observable<void>();
+  }
+
+  public get onClose() {
+    return this.onCloseObservable;
+  }
+
+  public place(ray: BABYLON.Ray) {
+    this.plane.position.copyFrom(ray.origin.add(ray.direction.scale(2)));
+    this.plane.setDirection(ray.direction);
+  }
+
+  public _place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
     this.plane.position.copyFrom(position.add(direction.scale(2)));
     this.plane.setDirection(direction);
   }
@@ -30,7 +51,25 @@ export class GameOverGUI {
     return exitAnimationEnd;
   }
 
-  public create(scene: BABYLON.Scene, score: number) {
+  public setScore(score: number) {
+    createAnimationEnter("scaling", this.plane).onAnimationEndObservable.addOnce(() => {
+      let displayScore = 0;
+
+      this.plane.onBeforeDrawObservable.add(() => {
+        displayScore = Math.min(score, displayScore + 1 + Math.round((score - displayScore) / 50));
+
+        this.textScoreNumber.text = `${displayScore}`;
+
+        if (displayScore >= score) {
+          this.plane.onBeforeDrawObservable.clear();
+        }
+      });
+    });
+  }
+
+  public open() {
+    this.resource.getSound(AssetSounds.SOUND_GAMEOVER).play();
+
     if (this.plane) {
       return;
     }
@@ -41,7 +80,7 @@ export class GameOverGUI {
         size: 5,
         sourcePlane: new BABYLON.Plane(0, -1, 0, 0)
       },
-      scene
+      this.scene
     );
     plane.position.addInPlace(new BABYLON.Vector3(2.5, 0, 2.5));
     const texture = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 800, 800, true);
@@ -74,19 +113,7 @@ export class GameOverGUI {
     plane.setDirection(BABYLON.Vector3.Forward());
     plane.position.copyFrom(position);
 
-    createAnimationEnter("scaling", plane).onAnimationEndObservable.addOnce(() => {
-      let displayScore = 0;
-
-      plane.onBeforeDrawObservable.add(() => {
-        displayScore = Math.min(score, displayScore + 1 + Math.round((score - displayScore) / 50));
-
-        textScoreNumber.text = `${displayScore}`;
-
-        if (displayScore >= score) {
-          plane.onBeforeDrawObservable.clear();
-        }
-      });
-    });
+    this.textScoreNumber = textScoreNumber;
 
     this.texture = texture;
     this.plane = plane;

@@ -20,7 +20,12 @@ export class LoadingGUI {
     return this.onCloseObservable;
   }
 
-  public place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
+  public place(ray: BABYLON.Ray) {
+    this.plane.position.copyFrom(ray.origin.add(ray.direction.scale(2)));
+    this.plane.setDirection(ray.direction);
+  }
+
+  public placeOld(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
     this.plane.setDirection(direction);
 
     this.plane.position.copyFrom(position.add(direction.scale(2).add(this.plane.up.scale(-1))));
@@ -43,7 +48,7 @@ export class LoadingGUI {
     });
   }
 
-  public create() {
+  public open() {
     if (this.plane) {
       return;
     }

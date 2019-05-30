@@ -14,7 +14,12 @@ export class HUDGUI {
   private bubble: BABYLON.Mesh;
   private textScore: GUI.TextBlock;
 
-  public place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
+  public place(ray: BABYLON.Ray) {
+    this.plane.position.copyFrom(ray.origin.add(ray.direction.scale(2)));
+    this.plane.setDirection(ray.direction);
+  }
+
+  public oldlace(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
     this.plane.setDirection(direction);
 
     this.plane.position.copyFrom(position.add(direction.scale(2).add(this.plane.up.scale(-1))));
