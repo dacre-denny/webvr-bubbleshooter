@@ -3,33 +3,10 @@ import * as GUI from "babylonjs-gui";
 import { Theme } from "../assets";
 import { Colors, ColorMap } from "../objects/bubble";
 import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock, applyColors } from "../utilities";
+import { AbstractGUI } from "./gui";
 
-export class LoadingGUI {
-  private scene: BABYLON.Scene;
-  private texture: GUI.AdvancedDynamicTexture;
-  private plane: BABYLON.Mesh;
+export class LoadingGUI extends AbstractGUI {
   private rectPercentage: GUI.Rectangle;
-  private onCloseObservable: BABYLON.Observable<void>;
-
-  constructor(scene: BABYLON.Scene) {
-    this.scene = scene;
-    this.onCloseObservable = new BABYLON.Observable<void>();
-  }
-
-  public get onClose() {
-    return this.onCloseObservable;
-  }
-
-  public place(ray: BABYLON.Ray) {
-    this.plane.position.copyFrom(ray.origin.add(ray.direction.scale(2)));
-    this.plane.setDirection(ray.direction);
-  }
-
-  public placeOld(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
-    this.plane.setDirection(direction);
-
-    this.plane.position.copyFrom(position.add(direction.scale(2).add(this.plane.up.scale(-1))));
-  }
 
   public close() {
     if (!this.plane) {

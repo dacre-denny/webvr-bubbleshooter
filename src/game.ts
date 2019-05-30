@@ -137,7 +137,7 @@ export class Game {
 
   private showLoading() {
     // Create and display loading GUI
-    const loading = new LoadingGUI(this.scene);
+    const loading = new LoadingGUI(this.scene, this.resources);
     loading.onClose.addOnce(() => this.showMenu());
     loading.open();
 

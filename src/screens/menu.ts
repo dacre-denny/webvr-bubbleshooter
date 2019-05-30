@@ -1,36 +1,16 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
-import { createAnimationExit, createTextBlock, createAnimationEnter, createGlass } from "../utilities";
-import { Theme, Assets } from "../assets";
-import { Resources, AssetSounds } from "../services/resources";
+import { Assets, Theme } from "../assets";
+import { AssetSounds } from "../services/resources";
+import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock } from "../utilities";
+import { AbstractGUI } from "./gui";
 
-export class MenuGUI {
-  private texture: GUI.AdvancedDynamicTexture;
-  private plane: BABYLON.Mesh;
-  private scene: BABYLON.Scene;
-  private resource: Resources;
-  private onCloseObservable: BABYLON.Observable<void>;
-
-  constructor(scene: BABYLON.Scene, resource: Resources) {
-    this.scene = scene;
-    this.resource = resource;
-    this.onCloseObservable = new BABYLON.Observable<void>();
-  }
-
-  public get onClose() {
-    return this.onCloseObservable;
-  }
-
-  public place(ray: BABYLON.Ray) {
-    this.plane.position.copyFrom(ray.origin.add(ray.direction.scale(2)));
-    this.plane.setDirection(ray.direction);
-  }
-
+export class MenuGUI extends AbstractGUI {
   public close() {
     if (!this.plane) {
       return;
     }
-    debugger;
+
     this.resource.getSound(AssetSounds.SOUND_BUTTON).play();
 
     const exitAnimationEnd = createAnimationExit("scaling", this.plane).onAnimationEndObservable;
@@ -41,6 +21,8 @@ export class MenuGUI {
 
       this.texture = null;
       this.plane = null;
+
+      this.onCloseObservable.notifyObservers();
     });
   }
 

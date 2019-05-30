@@ -1,37 +1,12 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Assets, Theme } from "../assets";
-import { createAnimationEnter, createAnimationExit, createTextBlock, createGlass } from "../utilities";
-import { Resources, AssetSounds } from "../services/resources";
+import { AssetSounds } from "../services/resources";
+import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock } from "../utilities";
+import { AbstractGUI } from "./gui";
 
-export class GameOverGUI {
-  private texture: GUI.AdvancedDynamicTexture;
+export class GameOverGUI extends AbstractGUI {
   private textScoreNumber: GUI.TextBlock;
-  private plane: BABYLON.Mesh;
-
-  private scene: BABYLON.Scene;
-  private resource: Resources;
-  private onCloseObservable: BABYLON.Observable<void>;
-
-  constructor(scene: BABYLON.Scene, resource: Resources) {
-    this.scene = scene;
-    this.resource = resource;
-    this.onCloseObservable = new BABYLON.Observable<void>();
-  }
-
-  public get onClose() {
-    return this.onCloseObservable;
-  }
-
-  public place(ray: BABYLON.Ray) {
-    this.plane.position.copyFrom(ray.origin.add(ray.direction.scale(2)));
-    this.plane.setDirection(ray.direction);
-  }
-
-  public _place(position: BABYLON.Vector3, direction: BABYLON.Vector3) {
-    this.plane.position.copyFrom(position.add(direction.scale(2)));
-    this.plane.setDirection(direction);
-  }
 
   public close() {
     if (!this.plane) {
