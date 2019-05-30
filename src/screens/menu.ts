@@ -30,7 +30,7 @@ export class MenuGUI {
     if (!this.plane) {
       return;
     }
-
+    debugger;
     this.resource.getSound(AssetSounds.SOUND_BUTTON).play();
 
     const exitAnimationEnd = createAnimationExit("scaling", this.plane).onAnimationEndObservable;

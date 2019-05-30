@@ -59,7 +59,6 @@ export class Game {
 
     this.level = new Level();
     this.player = new Player();
-    this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
     this.soundMusic = new BABYLON.Sound("sound-music", Assets.SOUND_MUSIC, this.scene, null, {
       loop: true,
@@ -84,6 +83,7 @@ export class Game {
 
     this.level.create(this.scene);
     this.player.create(this.scene);
+    this.player.lookAt(new BABYLON.Vector3(2, 5, 3));
 
     this.engine.runRenderLoop(() => {
       this.scene.render();
@@ -98,8 +98,6 @@ export class Game {
 
     this.showLoading();
   }
-
-  private createServices() {}
 
   private EventConfig() {
     const { VRHelper } = this;

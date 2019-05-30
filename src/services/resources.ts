@@ -59,7 +59,7 @@ export class Resources {
     // Load sounds
     for (const key in AssetSounds) {
       const path = AssetSounds[key];
-      const task = assetsManager.addBinaryFileTask(key, path);
+      const task = assetsManager.addBinaryFileTask(path, path);
 
       task.onSuccess = (t: BABYLON.BinaryFileAssetTask) => this.assetMap.set(t.name, new BABYLON.Sound(t.name, t.data, this.scene));
     }
@@ -67,7 +67,7 @@ export class Resources {
     // Load textures
     for (const key in AssetTextures) {
       const path = AssetTextures[key];
-      const task = assetsManager.addTextureTask(key, path);
+      const task = assetsManager.addTextureTask(path, path);
 
       task.onSuccess = (t: BABYLON.TextureAssetTask) => {
         this.assetMap.set(t.name, t.texture);
