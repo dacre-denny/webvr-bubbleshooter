@@ -155,6 +155,9 @@ export class Game {
   private showMenu() {
     // Create and display menu GUI
     const menu = new MenuGUI(this.scene, this.resources);
+    menu.onClose.addOnce(() => {
+      this.showGame();
+    });
     menu.open();
 
     // Reset and bind loading menu placement to user movement
@@ -163,7 +166,9 @@ export class Game {
 
     // Reset and bind user menu close to user trigger
     this.onUserTriggerObservable.clear();
-    this.onUserTriggerObservable.add(() => this.showGame());
+    this.onUserTriggerObservable.add(() => {
+      menu.close();
+    });
   }
 
   private showGameOver() {

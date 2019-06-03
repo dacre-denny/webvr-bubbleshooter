@@ -18,15 +18,16 @@ export class LoadingGUI extends AbstractGUI {
   protected create() {
     super.create(4, 1);
 
-    var panel = new GUI.StackPanel("panel");
+    const panel = new GUI.StackPanel("panel");
     this.texture.addControl(panel);
 
     const glass = this.createRectangleGlass();
     panel.addControl(glass);
 
     const progress = this.createProgressBlock();
-    this.percentage = progress.inner;
     glass.addControl(progress.wrapper);
+
+    this.percentage = progress.inner;
   }
 
   public close() {

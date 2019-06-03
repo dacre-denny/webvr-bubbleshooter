@@ -80,7 +80,6 @@ export abstract class AbstractGUI {
     this.plane = BABYLON.MeshBuilder.CreatePlane(
       "menu",
       {
-        size: 5,
         sourcePlane: new BABYLON.Plane(0, -1, 0, 0),
         width,
         height
@@ -91,7 +90,7 @@ export abstract class AbstractGUI {
     this.plane.setDirection(BABYLON.Vector3.Forward());
     this.plane.position.copyFrom(new BABYLON.Vector3().addInPlace(BABYLON.Vector3.Up()).addInPlace(BABYLON.Vector3.Forward().scale(6)));
 
-    this.texture = GUI.AdvancedDynamicTexture.CreateForMesh(this.plane, width * 100, height * 100, true);
+    this.texture = GUI.AdvancedDynamicTexture.CreateForMesh(this.plane, width * 300, height * 300, true);
   }
 
   public get onClose() {

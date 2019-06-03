@@ -9,6 +9,10 @@ export function randomColor() {
   return Math.floor(Math.random() * 6) as Colors;
 }
 
+export function clockTime() {
+  return Date.now() / 1000;
+}
+
 export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
