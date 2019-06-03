@@ -20,14 +20,14 @@ export class Resources {
   private scene: BABYLON.Scene;
   private assetMap: Map<string, BABYLON.Sound | BABYLON.Texture>;
   private material: BABYLON.StandardMaterial;
-  private onFinishObservable: BABYLON.Observable<void>;
+  private onFinishObservable: BABYLON.Observable<Error[]>;
   private onProgressObservable: BABYLON.Observable<number>;
 
   constructor(scene: BABYLON.Scene) {
     this.scene = scene;
     this.assetMap = new Map();
     this.material = null;
-    this.onFinishObservable = new BABYLON.Observable<void>();
+    this.onFinishObservable = new BABYLON.Observable<Error[]>();
     this.onProgressObservable = new BABYLON.Observable<number>();
   }
 
@@ -77,7 +77,13 @@ export class Resources {
     assetsManager.onProgress = (i: number, n: number) => {
       this.onProgressObservable.notifyObservers(Math.ceil((100 * (n - i)) / n));
     };
-    assetsManager.onFinish = () => this.onFinishObservable.notifyObservers();
+    assetsManager.onFinish = (tasks:BABYLON.AbstractAssetTask[]) => {
+      
+      const errors = tasks.filter(t => t.isCompleted !== true).map(t => t.errorObject.exception)
+      
+      this.onFinishObservable.notifyObservers(errors);
+    }
+    
     assetsManager.useDefaultLoadingScreen = false;
     assetsManager.load();
   }

@@ -117,26 +117,38 @@ export class Game {
   private showLoading() {
     // Create and display loading GUI
     const loading = new LoadingGUI(this.scene, this.resources);
-    loading.onClose.addOnce(() => {
-      // Configure background music
-      const music = this.resources.getSound(AssetSounds.SOUND_MUSIC);
-      music.loop = true;
-      music.play();
-
-      this.showMenu();
-    });
     loading.open();
 
     // Reset and bind loading menu placement to user movement
     this.onUserMoveObservable.clear();
     this.onUserMoveObservable.add((ray: BABYLON.Ray) => loading.place(ray));
 
-    // Reset resource loading events on resources service
+    // Reset resource loading events on resources servicee
     this.resources.onFinish.clear();
     this.resources.onProgress.clear();
 
     // Bind resource loading events on resources service
-    this.resources.onFinish.addOnce(() => loading.close());
+    this.resources.onFinish.addOnce((errors:Error[]) => {
+      
+      loading.close()
+
+      if(errors.length > 0) {
+        
+        // Report error notification to user if any load time errors
+        alert(`Failed to load assets. See console for details.`)
+        console.error(`Failed to load assets.`, errors)
+        return
+      }
+      
+      // Configure background music
+      const music = this.resources.getSound(AssetSounds.SOUND_MUSIC);
+      music.loop = true;
+      music.play();
+
+      this.showMenu();
+
+    });
+    
     this.resources.onProgress.add(percentage => loading.setPercentage(percentage));
 
     this.resources.loadResources();
@@ -145,7 +157,6 @@ export class Game {
   private showMenu() {
     // Create and display menu GUI
     const menu = new MenuGUI(this.scene, this.resources);
-    menu.onClose.addOnce(() => this.showGame());
     menu.open();
 
     // Reset and bind loading menu placement to user movement
@@ -154,16 +165,12 @@ export class Game {
 
     // Reset and bind user menu close to user trigger
     this.onUserTriggerObservable.clear();
-    this.onUserTriggerObservable.add(() => menu.close());
+    this.onUserTriggerObservable.add(() => this.showGame());
   }
 
   private showGameOver() {
     // Create and display game over GUI
     const gameOver = new GameOverGUI(this.scene, this.resources);
-    gameOver.onClose.addOnce(() => {
-      confetti.stop();
-      this.showMenu();
-    });
     gameOver.setScore(this.gameScore);
     gameOver.open();
 
@@ -173,7 +180,12 @@ export class Game {
 
     // Reset and bind user menu close to user trigger
     this.onUserTriggerObservable.clear();
-    this.onUserTriggerObservable.add(() => gameOver.close());
+    this.onUserTriggerObservable.add(() => {
+      gameOver.close()
+      
+      confetti.stop();
+      this.showMenu();
+    });
 
     const confetti = Particles.createConfetti(this.scene, new BABYLON.Vector3(0, 15, 0));
   }
@@ -188,8 +200,6 @@ export class Game {
     let shotAttempts = Game.SHOT_ATTEMPTS;
     let shotBubble: Bubble = null;
 
-    const VRHelper = this.VRHelper;
-    const camera = VRHelper.webVRCamera;
     const burstQue = new ActionQueue();
     const hud = new HUDGUI(this.scene, this.resources);
 

@@ -21,7 +21,6 @@ export class LoadingGUI extends AbstractGUI {
 
       this.texture = null;
       this.plane = null;
-      this.onCloseObservable.notifyObservers();
     });
   }
 

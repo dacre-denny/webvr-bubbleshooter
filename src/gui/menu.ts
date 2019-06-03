@@ -21,8 +21,6 @@ export class MenuGUI extends AbstractGUI {
 
       this.texture = null;
       this.plane = null;
-
-      this.onCloseObservable.notifyObservers();
     });
   }
 
