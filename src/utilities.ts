@@ -13,53 +13,20 @@ export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-export function applyPosition(sphere: BABYLON.Mesh) {
+export function applyColors(sphere: BABYLON.Mesh, color: BABYLON.Color3, frequency: number = 3) {
   const b = sphere.getBoundingInfo();
-  const range = BABYLON.Vector3.Maximize(
-    BABYLON.Vector3.One(),
-    b.maximum.subtract(b.minimum)
-  );
-  var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-  if (positions) {
-    for (var p = 0; p < positions.length / 3; p++) {
-      const x = positions[p * 3 + 0];
-      positions[p * 3 + 1] += Math.sin(x * 3) * 0.1;
-      // positions[p * 3 + 1] += Math.random();
-      // positions[p * 3 + 2] += Math.random();
-    }
-  }
-  sphere.setVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
-}
-export function applyColors(
-  sphere: BABYLON.Mesh,
-  color: BABYLON.Color3,
-  frequency: number = 3
-) {
-  const b = sphere.getBoundingInfo();
-  const range = BABYLON.Vector3.Maximize(
-    BABYLON.Vector3.One(),
-    b.maximum.subtract(b.minimum)
-  );
+  const range = BABYLON.Vector3.Maximize(BABYLON.Vector3.One(), b.maximum.subtract(b.minimum));
   var colors = sphere.getVerticesData(BABYLON.VertexBuffer.ColorKind);
   if (!colors) {
     colors = [];
     var positions = sphere.getVerticesData(BABYLON.VertexBuffer.PositionKind);
 
     for (var p = 0; p < positions.length / 3; p++) {
-      let pos = new BABYLON.Vector4(
-        positions[p * 3 + 0],
-        positions[p * 3 + 1],
-        positions[p * 3 + 2],
-        1
-      );
+      let pos = new BABYLON.Vector4(positions[p * 3 + 0], positions[p * 3 + 1], positions[p * 3 + 2], 1);
 
-      const g =
-        color.g * (1 - 0.125) + Math.sin((frequency * pos.x) / range.x) * 0.125;
-      const b =
-        color.b * (1 - 0.125) + Math.cos((frequency * pos.y) / range.y) * 0.125;
-      const r =
-        color.r * (1 - 0.125) +
-        Math.cos(Math.PI + (frequency * pos.z) / range.z) * 0.125;
+      const g = color.g * (1 - 0.125) + Math.sin((frequency * pos.x) / range.x) * 0.125;
+      const b = color.b * (1 - 0.125) + Math.cos((frequency * pos.y) / range.y) * 0.125;
+      const r = color.r * (1 - 0.125) + Math.cos(Math.PI + (frequency * pos.z) / range.z) * 0.125;
 
       colors.push(r, g, b, 1);
     }
@@ -67,39 +34,7 @@ export function applyColors(
   sphere.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
 }
 
-export function createGlass() {
-  const glass = new GUI.Rectangle("glass");
-  glass.zIndex = -1;
-  glass.cornerRadius = 20;
-  glass.height = `100%`;
-  glass.widthInPixels = 400;
-  glass.background = Theme.COLOR_WHITE + "33";
-  glass.thickness = 0;
-
-  return glass;
-}
-
-export function createTextBlock(
-  text: string,
-  size: number,
-  color: string = "white"
-) {
-  const textBlock = new GUI.TextBlock();
-  textBlock.text = text;
-  textBlock.fontSize = size;
-  textBlock.heightInPixels = size + 10;
-  textBlock.paddingBottomInPixels = 5;
-  textBlock.paddingTopInPixels = 5;
-  textBlock.color = color;
-  textBlock.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-
-  return textBlock;
-}
-export function createAnimationTranslate(
-  property: string,
-  destination: BABYLON.Vector3,
-  mesh: BABYLON.AbstractMesh
-) {
+export function createAnimationTranslate(property: string, destination: BABYLON.Vector3, mesh: BABYLON.AbstractMesh) {
   const frameRate = 10;
 
   const open = new BABYLON.Animation(
@@ -128,15 +63,10 @@ export function createAnimationTranslate(
 
   open.setKeys(keyFrames);
 
-  return mesh
-    .getScene()
-    .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
+  return mesh.getScene().beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }
 
-export function createAnimationEnter(
-  property: string,
-  mesh: BABYLON.AbstractMesh
-) {
+export function createAnimationEnter(property: string, mesh: BABYLON.AbstractMesh) {
   const frameRate = 10;
 
   const open = new BABYLON.Animation(
@@ -165,15 +95,10 @@ export function createAnimationEnter(
 
   open.setKeys(keyFrames);
 
-  return mesh
-    .getScene()
-    .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
+  return mesh.getScene().beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }
 
-export function createAnimationExit(
-  property: string,
-  mesh: BABYLON.AbstractMesh
-) {
+export function createAnimationExit(property: string, mesh: BABYLON.AbstractMesh) {
   const frameRate = 10;
 
   const open = new BABYLON.Animation(
@@ -206,10 +131,7 @@ export function createAnimationExit(
   return scene.beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }
 
-export function createAnimationScale(
-  property: string,
-  mesh: BABYLON.AbstractMesh
-) {
+export function createAnimationScale(property: string, mesh: BABYLON.AbstractMesh) {
   const frameRate = 10;
 
   const open = new BABYLON.Animation(
@@ -238,7 +160,5 @@ export function createAnimationScale(
 
   open.setKeys(keyFrames);
 
-  return mesh
-    .getScene()
-    .beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
+  return mesh.getScene().beginDirectAnimation(mesh, [open], 0, frameRate, false, 2);
 }

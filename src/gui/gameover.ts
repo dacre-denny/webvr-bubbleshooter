@@ -2,7 +2,7 @@ import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Assets, Theme } from "../assets";
 import { AssetSounds } from "../services/resources";
-import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock } from "../utilities";
+import { createAnimationEnter, createAnimationExit } from "../utilities";
 import { AbstractGUI } from "./gui";
 
 export class GameOverGUI extends AbstractGUI {
@@ -21,6 +21,7 @@ export class GameOverGUI extends AbstractGUI {
 
       this.texture = null;
       this.plane = null;
+      this.onCloseObservable.notifyObservers();
     });
 
     return exitAnimationEnd;
@@ -69,14 +70,14 @@ export class GameOverGUI extends AbstractGUI {
     title.heightInPixels = 100;
     title.widthInPixels = 270;
 
-    const textScoreNumber = createTextBlock(`${0}`, 60, Theme.COLOR_BLUE);
+    const textScoreNumber = this.createTextBlock(`${0}`, 60, Theme.COLOR_BLUE);
 
     panel.addControl(title);
-    panel.addControl(createTextBlock(`Your scope`, 20, Theme.COLOR_BLUE));
+    panel.addControl(this.createTextBlock(`Your scope`, 20, Theme.COLOR_BLUE));
     panel.addControl(textScoreNumber);
-    panel.addControl(createTextBlock(`Pull trigger to continue`, 20, Theme.COLOR_BLUE));
+    panel.addControl(this.createTextBlock(`Pull trigger to continue`, 20, Theme.COLOR_BLUE));
 
-    const glass = createGlass();
+    const glass = this.createRectangleGlass();
     glass.paddingTop = "15%";
     glass.height = "90%";
     panel.addControl(glass);

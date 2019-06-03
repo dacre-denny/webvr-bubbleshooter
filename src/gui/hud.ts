@@ -2,7 +2,7 @@ import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Theme } from "../assets";
 import { Colors, ColorMap } from "../objects/bubble";
-import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock, applyColors } from "../utilities";
+import { createAnimationEnter, createAnimationExit, applyColors } from "../utilities";
 import { AbstractGUI } from "./gui";
 
 export class HUDGUI extends AbstractGUI {
@@ -31,6 +31,7 @@ export class HUDGUI extends AbstractGUI {
 
       this.texture = null;
       this.plane = null;
+      this.onCloseObservable.notifyObservers();
     });
 
     return exitAnimationEnd;
@@ -60,7 +61,7 @@ export class HUDGUI extends AbstractGUI {
     texture.addControl(panel);
 
     {
-      const glass = createGlass();
+      const glass = this.createRectangleGlass();
       glass.height = "100%";
       glass.width = "100%";
       glass.paddingTop = "0%";
@@ -70,7 +71,7 @@ export class HUDGUI extends AbstractGUI {
     }
 
     {
-      const textScore = createTextBlock(``, 60, Theme.COLOR_BLUE);
+      const textScore = this.createTextBlock(``, 60, Theme.COLOR_BLUE);
       textScore.heightInPixels = 100;
       textScore.widthInPixels = 345;
       textScore.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;

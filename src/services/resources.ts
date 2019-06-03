@@ -77,13 +77,12 @@ export class Resources {
     assetsManager.onProgress = (i: number, n: number) => {
       this.onProgressObservable.notifyObservers(Math.ceil((100 * (n - i)) / n));
     };
-    assetsManager.onFinish = (tasks:BABYLON.AbstractAssetTask[]) => {
-      
-      const errors = tasks.filter(t => t.isCompleted !== true).map(t => t.errorObject.exception)
-      
+    assetsManager.onFinish = (tasks: BABYLON.AbstractAssetTask[]) => {
+      const errors = tasks.filter(t => t.isCompleted !== true).map(t => t.errorObject.exception);
+
       this.onFinishObservable.notifyObservers(errors);
-    }
-    
+    };
+
     assetsManager.useDefaultLoadingScreen = false;
     assetsManager.load();
   }

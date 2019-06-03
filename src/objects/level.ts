@@ -1,13 +1,6 @@
 import * as BABYLON from "babylonjs";
 import { BubbleFactory } from "../bubbleFactory";
-import {
-  applyColors,
-  clamp,
-  createAnimationScale,
-  createAnimationTranslate,
-  randomColor,
-  applyPosition
-} from "../utilities";
+import { applyColors, clamp, createAnimationScale, createAnimationTranslate, randomColor } from "../utilities";
 import { Bubble } from "./bubble";
 import { ActionRandom } from "./queue";
 
@@ -110,49 +103,29 @@ export class Level {
       {
         height: LEVEL_LAYERS,
         width: LEVEL_DEPTH * 2,
-        position: new BABYLON.Vector3(
-          -LEVEL_WIDTH,
-          LEVEL_LAYERS * 0.5 + Bubble.RADIUS,
-          0
-        )
+        position: new BABYLON.Vector3(-LEVEL_WIDTH, LEVEL_LAYERS * 0.5 + Bubble.RADIUS, 0)
       },
       {
         height: LEVEL_LAYERS,
         width: LEVEL_DEPTH * 2,
-        position: new BABYLON.Vector3(
-          0,
-          LEVEL_LAYERS * 0.5 + Bubble.RADIUS,
-          -LEVEL_DEPTH
-        )
+        position: new BABYLON.Vector3(0, LEVEL_LAYERS * 0.5 + Bubble.RADIUS, -LEVEL_DEPTH)
       },
       {
         height: LEVEL_LAYERS,
         width: LEVEL_WIDTH * 2,
-        position: new BABYLON.Vector3(
-          0,
-          LEVEL_LAYERS * 0.5 + Bubble.RADIUS,
-          LEVEL_DEPTH
-        )
+        position: new BABYLON.Vector3(0, LEVEL_LAYERS * 0.5 + Bubble.RADIUS, LEVEL_DEPTH)
       },
       {
         height: LEVEL_LAYERS,
         width: LEVEL_WIDTH * 2,
-        position: new BABYLON.Vector3(
-          LEVEL_WIDTH,
-          LEVEL_LAYERS * 0.5 + Bubble.RADIUS,
-          0
-        )
+        position: new BABYLON.Vector3(LEVEL_WIDTH, LEVEL_LAYERS * 0.5 + Bubble.RADIUS, 0)
       }
     ];
 
     const level = new BABYLON.Mesh("level", scene);
 
     walls.forEach((wall, index) => {
-      const direction = new BABYLON.Vector3(
-        -wall.position.x,
-        0,
-        -wall.position.z
-      ).normalize();
+      const direction = new BABYLON.Vector3(-wall.position.x, 0, -wall.position.z).normalize();
 
       var mesh = BABYLON.MeshBuilder.CreateTiledGround(`level.wall.${index}`, {
         xmin: -wall.height * 0.5,
@@ -166,11 +139,7 @@ export class Level {
         updatable: true
       });
 
-      mesh.position.set(
-        wall.position.x - OFFSET_X,
-        Bubble.RADIUS,
-        wall.position.z - OFFSET_Z
-      );
+      mesh.position.set(wall.position.x - OFFSET_X, Bubble.RADIUS, wall.position.z - OFFSET_Z);
       mesh.alignWithNormal(direction);
 
       const phase = Math.PI * 2 * (index / 4);
@@ -180,12 +149,7 @@ export class Level {
 
       applyColors(mesh, BABYLON.Color3.FromInts(55, 55, 55), 5);
       material.alphaMode = BABYLON.Engine.ALPHA_ADD;
-      const imposter = new BABYLON.PhysicsImpostor(
-        mesh,
-        BABYLON.PhysicsImpostor.PlaneImpostor,
-        { mass: 0, damping: 0, friction: 0, restitution: 0 },
-        scene
-      );
+      const imposter = new BABYLON.PhysicsImpostor(mesh, BABYLON.PhysicsImpostor.PlaneImpostor, { mass: 0, damping: 0, friction: 0, restitution: 0 }, scene);
 
       mesh.material = material;
       mesh.physicsImpostor = imposter;
@@ -213,12 +177,7 @@ export class Level {
       applyColors(mesh, BABYLON.Color3.FromInts(55, 55, 55), 5);
       material.alphaMode = BABYLON.Engine.ALPHA_ADD;
 
-      const imposter = new BABYLON.PhysicsImpostor(
-        mesh,
-        BABYLON.PhysicsImpostor.BoxImpostor,
-        { mass: 0, damping: 0, friction: 0, restitution: 0 },
-        scene
-      );
+      const imposter = new BABYLON.PhysicsImpostor(mesh, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, damping: 0, friction: 0, restitution: 0 }, scene);
 
       mesh.physicsImpostor = imposter;
       mesh.checkCollisions = true;
@@ -229,12 +188,7 @@ export class Level {
       this.top = mesh;
     }
 
-    const impostor = new BABYLON.PhysicsImpostor(
-      level,
-      BABYLON.PhysicsImpostor.NoImpostor,
-      { mass: 0, damping: 0, friction: 0, restitution: 1 },
-      scene
-    );
+    const impostor = new BABYLON.PhysicsImpostor(level, BABYLON.PhysicsImpostor.NoImpostor, { mass: 0, damping: 0, friction: 0, restitution: 1 }, scene);
     level.physicsImpostor = impostor;
     level.checkCollisions = true;
 
@@ -284,14 +238,7 @@ export class Level {
   }
 
   public getLocalKeysOfSameColor(key: string) {
-    const options = [
-      [0, +1, 0],
-      [0, -1, 0],
-      [0, 0, +1],
-      [0, 0, -1],
-      [+1, 0, 0],
-      [-1, 0, 0]
-    ];
+    const options = [[0, +1, 0], [0, -1, 0], [0, 0, +1], [0, 0, -1], [+1, 0, 0], [-1, 0, 0]];
 
     let indicies = this.getIndicies(key);
     const bubble = this.lattice.get(key);
@@ -420,11 +367,7 @@ export class Level {
   }
 
   private getIndicies(key: string): [number, number, number] {
-    return key.split(",").map(i => Number.parseInt(i)) as [
-      number,
-      number,
-      number
-    ];
+    return key.split(",").map(i => Number.parseInt(i)) as [number, number, number];
   }
 
   public removeBubble(bubble: Bubble) {
@@ -436,24 +379,14 @@ export class Level {
   }
 
   public insertBubbleLayer(bubbleFactory: BubbleFactory) {
-    function place(
-      bubble: Bubble,
-      x: number,
-      y: number,
-      z: number,
-      animate: boolean
-    ) {
+    function place(bubble: Bubble, x: number, y: number, z: number, animate: boolean) {
       if (!bubble) {
         return;
       }
       const mesh = bubble.getMesh();
 
       if (animate) {
-        createAnimationTranslate(
-          "position",
-          new BABYLON.Vector3(x, y, z),
-          mesh
-        );
+        createAnimationTranslate("position", new BABYLON.Vector3(x, y, z), mesh);
       } else {
         const { position } = mesh;
 

@@ -2,7 +2,7 @@ import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Assets, Theme } from "../assets";
 import { AssetSounds } from "../services/resources";
-import { createAnimationEnter, createAnimationExit, createGlass, createTextBlock } from "../utilities";
+import { createAnimationEnter, createAnimationExit } from "../utilities";
 import { AbstractGUI } from "./gui";
 
 export class MenuGUI extends AbstractGUI {
@@ -21,6 +21,7 @@ export class MenuGUI extends AbstractGUI {
 
       this.texture = null;
       this.plane = null;
+      this.onCloseObservable.notifyObservers();
     });
   }
 
@@ -53,9 +54,9 @@ export class MenuGUI extends AbstractGUI {
       panel.addControl(title);
     }
 
-    panel.addControl(createTextBlock(`Pull trigger to play!`, 20, Theme.COLOR_BLUE));
+    panel.addControl(this.createTextBlock(`Pull trigger to play!`, 20, Theme.COLOR_BLUE));
     {
-      const glass = createGlass();
+      const glass = this.createRectangleGlass();
       glass.height = "70%";
       glass.paddingTop = "30%";
 

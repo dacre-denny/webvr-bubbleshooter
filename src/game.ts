@@ -128,27 +128,25 @@ export class Game {
     this.resources.onProgress.clear();
 
     // Bind resource loading events on resources service
-    this.resources.onFinish.addOnce((errors:Error[]) => {
-      
-      loading.close()
-
-      if(errors.length > 0) {
-        
+    this.resources.onFinish.addOnce((errors: Error[]) => {
+      if (errors.length > 0) {
         // Report error notification to user if any load time errors
-        alert(`Failed to load assets. See console for details.`)
-        console.error(`Failed to load assets.`, errors)
-        return
+        alert(`Failed to load assets. See console for details.`);
+        console.error(`Failed to load assets.`, errors);
+        return;
       }
-      
-      // Configure background music
-      const music = this.resources.getSound(AssetSounds.SOUND_MUSIC);
-      music.loop = true;
-      music.play();
+      loading.onClose.addOnce(() => {
+        // Configure background music
+        const music = this.resources.getSound(AssetSounds.SOUND_MUSIC);
+        music.loop = true;
+        music.play();
 
-      this.showMenu();
+        this.showMenu();
+      });
 
+      loading.close();
     });
-    
+
     this.resources.onProgress.add(percentage => loading.setPercentage(percentage));
 
     this.resources.loadResources();
@@ -181,8 +179,8 @@ export class Game {
     // Reset and bind user menu close to user trigger
     this.onUserTriggerObservable.clear();
     this.onUserTriggerObservable.add(() => {
-      gameOver.close()
-      
+      gameOver.close();
+
       confetti.stop();
       this.showMenu();
     });
