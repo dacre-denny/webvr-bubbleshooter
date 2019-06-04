@@ -26,11 +26,11 @@ export class LoadingGUI extends AbstractGUI {
     const glass = this.createRectangleGlass();
     panel.addControl(glass);
 
-    // Add progress bar to glass background
-    const progress = this.createProgressBlock();
-    glass.addControl(progress.wrapper);
+    // Add loading progress to glass background
+    const loading = this.createProgressBlock();
+    glass.addControl(loading.wrapper);
 
-    this.percentage = progress.inner;
+    this.percentage = loading.inner;
   }
 
   public close() {

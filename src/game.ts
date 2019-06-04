@@ -315,7 +315,7 @@ export class Game {
         shotAttempts = Math.min(shotAttempts + 1, Game.SHOT_ATTEMPTS);
       }
 
-      hud.setLevel((100 * shotAttempts) / Game.SHOT_ATTEMPTS);
+      hud.setAttempts((100 * shotAttempts) / Game.SHOT_ATTEMPTS);
       // hud.setAlert(this.level.getBubbles().some(Level.almostBelowBaseline));
 
       if (this.level.getBubbles().some(Level.belowBaseline)) {
@@ -336,6 +336,8 @@ export class Game {
     hud.open();
     hud.setBubble(nextBubbleColor);
     hud.setScore(this.gameScore);
-    hud.setLevel(100);
+    hud.setAttempts(100);
+
+    setTimeout(() => hud.setScore(10), 250);
   }
 }

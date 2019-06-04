@@ -7,14 +7,19 @@ import { AbstractGUI } from "./gui";
 import { applyAnimation, AnimationSpringOpen, AnimationSpringClose } from "../services/animations";
 
 export class HUDGUI extends AbstractGUI {
-  private rectAttempts: GUI.Rectangle;
+  private attempts: GUI.Rectangle;
   private bubble: BABYLON.Mesh;
-  private textScore: GUI.TextBlock;
+  private score: GUI.TextBlock;
 
   protected release() {
-    if (this.textScore) {
-      this.textScore.dispose();
-      this.textScore = null;
+    if (this.score) {
+      this.score.dispose();
+      this.score = null;
+    }
+
+    if (this.attempts) {
+      this.attempts.dispose();
+      this.attempts = null;
     }
 
     super.release();
@@ -41,12 +46,12 @@ export class HUDGUI extends AbstractGUI {
     glass.addControl(textScore);
 
     // Add shot attemps bar to glass background
-    const progress = this.createProgressBlock();
-    progress.wrapper.topInPixels = 35;
-    glass.addControl(progress.wrapper);
+    const attempts = this.createProgressBlock();
+    attempts.wrapper.topInPixels = 35;
+    glass.addControl(attempts.wrapper);
 
-    this.textScore = textScore;
-    this.rectAttempts = progress.inner;
+    this.score = textScore;
+    this.attempts = attempts.inner;
   }
 
   public close() {
@@ -68,24 +73,26 @@ export class HUDGUI extends AbstractGUI {
   }
 
   public setScore(score: number) {
-    if (!this.textScore) {
+    if (!this.score) {
       return;
     }
 
+    let frac = 0;
+    let startScore = Number.parseInt(this.score.text);
+    if (Number.isNaN(startScore)) {
+      startScore = 0;
+    }
+
     const counter = this.plane.onBeforeDrawObservable.add(() => {
-      let currentScore = Number.parseInt(this.textScore.text);
-      if (Number.isNaN(currentScore)) {
-        currentScore = 0;
-      }
+      frac += 0.025 * (1 - frac * frac);
 
-      currentScore += Math.round(Math.ceil((score - currentScore) / 500));
+      const displayScore = Math.min(score, Math.ceil(frac * (score - startScore) + startScore));
 
-      if (currentScore >= score) {
-        currentScore = score;
+      if (displayScore === score) {
         this.plane.onBeforeDrawObservable.remove(counter);
       }
 
-      this.textScore.text = `${currentScore}`;
+      this.score.text = `${displayScore}`;
     });
   }
 
@@ -142,10 +149,11 @@ export class HUDGUI extends AbstractGUI {
     }
   }
 
-  public setLevel(percent: number) {
-    if (!this.rectAttempts) {
+  public setAttempts(percent: number) {
+    if (!this.attempts) {
       return;
     }
-    this.rectAttempts.width = `${Math.max(0, Math.min(100, percent))}%`;
+
+    this.attempts.width = `${Math.max(0, Math.min(100, percent))}%`;
   }
 }
