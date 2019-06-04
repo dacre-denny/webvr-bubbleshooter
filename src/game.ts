@@ -75,7 +75,8 @@ export class Game {
       this.VRHelper.currentVRCamera.position.set(0, 0, 0);
     });
 
-    this.showLoading();
+    this.showGame();
+    //this.showLoading();
   }
 
   private EventConfig() {
@@ -315,7 +316,7 @@ export class Game {
       }
 
       hud.setLevel((100 * shotAttempts) / Game.SHOT_ATTEMPTS);
-      hud.setAlert(this.level.getBubbles().some(Level.almostBelowBaseline));
+      // hud.setAlert(this.level.getBubbles().some(Level.almostBelowBaseline));
 
       if (this.level.getBubbles().some(Level.belowBaseline)) {
         onCleanUp();

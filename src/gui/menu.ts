@@ -1,9 +1,9 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Theme } from "../assets";
-import { AnimationSpringOpen, applyAnimation, AnimationSpringClose } from "../services/animations";
+import { AnimationSpringClose, AnimationSpringOpen, applyAnimation } from "../services/animations";
 import { AssetSounds, AssetTextures } from "../services/resources";
-import { clockTime, createAnimationExit } from "../utilities";
+import { clockTime } from "../utilities";
 import { AbstractGUI } from "./gui";
 
 export class MenuGUI extends AbstractGUI {

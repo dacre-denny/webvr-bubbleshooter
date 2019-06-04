@@ -8,14 +8,69 @@ import { AbstractGUI } from "./gui";
 export class HUDGUI extends AbstractGUI {
   private score: number = 0;
 
-  private glass: GUI.Rectangle;
   private rectAttempts: GUI.Rectangle;
   private bubble: BABYLON.Mesh;
   private textScore: GUI.TextBlock;
 
-  public place(ray: BABYLON.Ray) {
-    this.plane.position.copyFrom(ray.origin.add(ray.direction.scale(2)));
-    this.plane.setDirection(ray.direction);
+  protected release() {}
+
+  protected create() {
+    super.create(2.5, 1.5);
+
+    const panel = new GUI.StackPanel("panel");
+    panel.heightInPixels = 150;
+    this.texture.addControl(panel);
+
+    const glass = this.createRectangleGlass();
+    // glass.height = "100%";
+    // glass.width = "100%";
+    // glass.paddingTop = "0%";
+
+    panel.addControl(glass);
+
+    const textScore = this.createTextBlock(``, 60, Theme.COLOR_BLUE);
+    textScore.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    glass.addControl(textScore);
+
+    this.textScore = textScore;
+    {
+      // textScore.heightInPixels = 100;
+      // textScore.widthInPixels = 345;
+    }
+
+    const progress = this.createProgressBlock();
+    glass.addControl(progress.wrapper);
+
+    this.rectAttempts = progress.inner;
+
+    // {
+    //   const rectWrap = new GUI.Rectangle();
+    //   rectWrap.heightInPixels = 20;
+    //   rectWrap.widthInPixels = 345;
+    //   rectWrap.cornerRadius = 100;
+    //   rectWrap.background = Theme.COLOR_WHITE + "44";
+    //   rectWrap.thickness = 0;
+
+    //   const rectAttempts = new GUI.Rectangle();
+    //   rectAttempts.height = `100%`;
+    //   rectAttempts.width = `0%`;
+    //   rectAttempts.cornerRadius = 100;
+    //   rectAttempts.background = Theme.COLOR_BLUE;
+    //   rectAttempts.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    //   rectAttempts.thickness = 0;
+
+    //   rectWrap.addControl(rectAttempts);
+    //   glass.addControl(rectWrap);
+
+    //   this.rectAttempts = rectAttempts;
+    // }
+
+    const position = new BABYLON.Vector3().addInPlace(BABYLON.Vector3.Up()).addInPlace(BABYLON.Vector3.Forward().scale(6));
+
+    this.plane.setDirection(BABYLON.Vector3.Forward());
+    this.plane.position.copyFrom(position);
+
+    createAnimationEnter("scaling", this.plane);
   }
 
   public close() {
@@ -38,80 +93,7 @@ export class HUDGUI extends AbstractGUI {
   }
 
   public open() {
-    if (this.plane) {
-      return;
-    }
-    const scale = 0.45;
-    const plane = BABYLON.MeshBuilder.CreatePlane(
-      "menu",
-      {
-        size: 5,
-        sourcePlane: new BABYLON.Plane(0, -1, 0, 0),
-        width: 4 * scale,
-        height: 1.5 * scale
-      },
-      this.scene
-    );
-
-    const texture = GUI.AdvancedDynamicTexture.CreateForMesh(plane, 400, 150, true);
-
-    var panel = new GUI.StackPanel("panel");
-    panel.heightInPixels = 150;
-    panel.widthInPixels = 400;
-    texture.addControl(panel);
-
-    {
-      const glass = this.createRectangleGlass();
-      glass.height = "100%";
-      glass.width = "100%";
-      glass.paddingTop = "0%";
-
-      panel.addControl(glass);
-      this.glass = glass;
-    }
-
-    {
-      const textScore = this.createTextBlock(``, 60, Theme.COLOR_BLUE);
-      textScore.heightInPixels = 100;
-      textScore.widthInPixels = 345;
-      textScore.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-
-      panel.addControl(textScore);
-
-      this.textScore = textScore;
-    }
-
-    {
-      const rectWrap = new GUI.Rectangle();
-      rectWrap.heightInPixels = 20;
-      rectWrap.widthInPixels = 345;
-      rectWrap.cornerRadius = 100;
-      rectWrap.background = Theme.COLOR_WHITE + "44";
-      rectWrap.thickness = 0;
-
-      const rectAttempts = new GUI.Rectangle();
-      rectAttempts.height = `100%`;
-      rectAttempts.width = `0%`;
-      rectAttempts.cornerRadius = 100;
-      rectAttempts.background = Theme.COLOR_BLUE;
-      rectAttempts.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-      rectAttempts.thickness = 0;
-
-      rectWrap.addControl(rectAttempts);
-      panel.addControl(rectWrap);
-
-      this.rectAttempts = rectAttempts;
-    }
-
-    const position = new BABYLON.Vector3().addInPlace(BABYLON.Vector3.Up()).addInPlace(BABYLON.Vector3.Forward().scale(6));
-
-    plane.setDirection(BABYLON.Vector3.Forward());
-    plane.position.copyFrom(position);
-
-    createAnimationEnter("scaling", plane);
-
-    this.texture = texture;
-    this.plane = plane;
+    this.create();
   }
 
   public setScore(score: number) {
@@ -189,9 +171,5 @@ export class HUDGUI extends AbstractGUI {
       return;
     }
     this.rectAttempts.width = `${Math.max(0, Math.min(100, percent))}%`;
-  }
-
-  public setAlert(alert: boolean) {
-    this.glass.background = alert ? "#ff666677" : Theme.COLOR_WHITE + "33";
   }
 }
