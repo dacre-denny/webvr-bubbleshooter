@@ -18,12 +18,15 @@ export class LoadingGUI extends AbstractGUI {
   protected create() {
     super.create(4, 1);
 
+    // Create panel
     const panel = new GUI.StackPanel("panel");
     this.texture.addControl(panel);
 
+    // Add glass background to loading panel
     const glass = this.createRectangleGlass();
     panel.addControl(glass);
 
+    // Add progress bar to glass background
     const progress = this.createProgressBlock();
     glass.addControl(progress.wrapper);
 

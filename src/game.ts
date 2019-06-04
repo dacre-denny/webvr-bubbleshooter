@@ -322,10 +322,11 @@ export class Game {
         onCleanUp();
         this.level.reset();
 
-        hud.close().addOnce(() => {
+        hud.onClose.addOnce(() => {
           // Game over condition reached
           this.showGameOver();
         });
+        hud.close();
       }
     };
 

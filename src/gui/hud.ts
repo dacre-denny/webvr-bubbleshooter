@@ -4,73 +4,49 @@ import { Theme } from "../assets";
 import { Colors, ColorMap } from "../objects/bubble";
 import { createAnimationEnter, createAnimationExit, applyColors } from "../utilities";
 import { AbstractGUI } from "./gui";
+import { applyAnimation, AnimationSpringOpen, AnimationSpringClose } from "../services/animations";
 
 export class HUDGUI extends AbstractGUI {
-  private score: number = 0;
-
   private rectAttempts: GUI.Rectangle;
   private bubble: BABYLON.Mesh;
   private textScore: GUI.TextBlock;
 
-  protected release() {}
+  protected release() {
+    if (this.textScore) {
+      this.textScore.dispose();
+      this.textScore = null;
+    }
+
+    super.release();
+  }
 
   protected create() {
     super.create(2.5, 1.5);
 
+    // Create panel
     const panel = new GUI.StackPanel("panel");
-    panel.heightInPixels = 150;
     this.texture.addControl(panel);
 
+    // Add glass background to hud panel
     const glass = this.createRectangleGlass();
-    // glass.height = "100%";
-    // glass.width = "100%";
-    // glass.paddingTop = "0%";
-
+    glass.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+    glass.heightInPixels = 150;
     panel.addControl(glass);
 
+    // Add score display to glass background
     const textScore = this.createTextBlock(``, 60, Theme.COLOR_BLUE);
     textScore.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    textScore.topInPixels = -25;
+    textScore.paddingLeftInPixels = 15;
     glass.addControl(textScore);
 
-    this.textScore = textScore;
-    {
-      // textScore.heightInPixels = 100;
-      // textScore.widthInPixels = 345;
-    }
-
+    // Add shot attemps bar to glass background
     const progress = this.createProgressBlock();
+    progress.wrapper.topInPixels = 35;
     glass.addControl(progress.wrapper);
 
+    this.textScore = textScore;
     this.rectAttempts = progress.inner;
-
-    // {
-    //   const rectWrap = new GUI.Rectangle();
-    //   rectWrap.heightInPixels = 20;
-    //   rectWrap.widthInPixels = 345;
-    //   rectWrap.cornerRadius = 100;
-    //   rectWrap.background = Theme.COLOR_WHITE + "44";
-    //   rectWrap.thickness = 0;
-
-    //   const rectAttempts = new GUI.Rectangle();
-    //   rectAttempts.height = `100%`;
-    //   rectAttempts.width = `0%`;
-    //   rectAttempts.cornerRadius = 100;
-    //   rectAttempts.background = Theme.COLOR_BLUE;
-    //   rectAttempts.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    //   rectAttempts.thickness = 0;
-
-    //   rectWrap.addControl(rectAttempts);
-    //   glass.addControl(rectWrap);
-
-    //   this.rectAttempts = rectAttempts;
-    // }
-
-    const position = new BABYLON.Vector3().addInPlace(BABYLON.Vector3.Up()).addInPlace(BABYLON.Vector3.Forward().scale(6));
-
-    this.plane.setDirection(BABYLON.Vector3.Forward());
-    this.plane.position.copyFrom(position);
-
-    createAnimationEnter("scaling", this.plane);
   }
 
   public close() {
@@ -78,22 +54,17 @@ export class HUDGUI extends AbstractGUI {
       return;
     }
 
-    const exitAnimationEnd = createAnimationExit("scaling", this.plane).onAnimationEndObservable;
-
-    exitAnimationEnd.add(() => {
-      this.texture.dispose();
-      this.plane.dispose();
-
-      this.texture = null;
-      this.plane = null;
+    applyAnimation(this.plane, AnimationSpringClose).onAnimationEndObservable.addOnce(() => {
       this.onCloseObservable.notifyObservers();
+      this.release();
     });
-
-    return exitAnimationEnd;
   }
 
   public open() {
     this.create();
+
+    this.plane.scaling = BABYLON.Vector3.Zero();
+    applyAnimation(this.plane, AnimationSpringOpen);
   }
 
   public setScore(score: number) {
@@ -102,14 +73,19 @@ export class HUDGUI extends AbstractGUI {
     }
 
     const counter = this.plane.onBeforeDrawObservable.add(() => {
-      this.score += Math.round(Math.ceil((score - this.score) / 500));
+      let currentScore = Number.parseInt(this.textScore.text);
+      if (Number.isNaN(currentScore)) {
+        currentScore = 0;
+      }
 
-      if (this.score >= score) {
-        this.score = score;
+      currentScore += Math.round(Math.ceil((score - currentScore) / 500));
+
+      if (currentScore >= score) {
+        currentScore = score;
         this.plane.onBeforeDrawObservable.remove(counter);
       }
 
-      this.textScore.text = `${this.score}`;
+      this.textScore.text = `${currentScore}`;
     });
   }
 
