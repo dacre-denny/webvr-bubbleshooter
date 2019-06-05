@@ -48,6 +48,6 @@ AnimationSpringClose.setKeys([
   }
 ]);
 
-export function applyAnimation(mesh: BABYLON.Mesh, animation: BABYLON.Animation) {
+export function applyAnimation(mesh: BABYLON.AbstractMesh, animation: BABYLON.Animation) {
   return mesh.getScene().beginDirectAnimation(mesh, [animation], 0, FRAME_RATE, false, 2);
 }

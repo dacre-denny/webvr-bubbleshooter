@@ -2,7 +2,7 @@ import * as BABYLON from "babylonjs";
 import { Particles } from "./particles";
 import { createAnimationExit } from "../utilities";
 
-export const enum Colors {
+export enum Colors {
   RED,
   BLUE,
   GREEN,
@@ -99,16 +99,10 @@ export class Bubble {
 
       // debugger;
       mesh.getScene().onBeforeRenderObservable.addOnce(() => {
-        createAnimationExit("scaling", mesh).onAnimationEndObservable.addOnce(
-          () => {
-            Particles.createBubblePopPartciles(
-              mesh.getScene(),
-              position,
-              color
-            );
-            mesh.dispose();
-          }
-        );
+        createAnimationExit("scaling", mesh).onAnimationEndObservable.addOnce(() => {
+          Particles.createBubblePopPartciles(mesh.getScene(), position, color);
+          mesh.dispose();
+        });
       });
     }
   }

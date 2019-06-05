@@ -75,8 +75,7 @@ export class Game {
       this.VRHelper.currentVRCamera.position.set(0, 0, 0);
     });
 
-    this.showGame();
-    //this.showLoading();
+    this.showLoading();
   }
 
   private EventConfig() {
@@ -142,7 +141,8 @@ export class Game {
         music.loop = true;
         music.play();
 
-        this.showMenu();
+        this.showGame();
+        //this.showMenu();
       });
 
       loading.close();

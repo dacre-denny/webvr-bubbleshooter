@@ -2,14 +2,30 @@ import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Theme } from "../assets";
 import { Colors, ColorMap } from "../objects/bubble";
-import { createAnimationEnter, createAnimationExit, applyColors } from "../utilities";
+import { createAnimationEnter, createAnimationExit, applyColors, clockTime } from "../utilities";
 import { AbstractGUI } from "./gui";
 import { applyAnimation, AnimationSpringOpen, AnimationSpringClose } from "../services/animations";
 
 export class HUDGUI extends AbstractGUI {
+  protected onBubbleAnimate: BABYLON.Observer<BABYLON.Scene>;
   private attempts: GUI.Rectangle;
-  private bubble: BABYLON.Mesh;
+  private bubbleInstance: BABYLON.InstancedMesh;
   private score: GUI.TextBlock;
+
+  private releaseBubble() {
+    if (this.bubbleInstance) {
+      if (this.plane) {
+        this.plane.removeChild(this.bubbleInstance);
+      }
+      this.bubbleInstance.dispose();
+      this.bubbleInstance = null;
+    }
+
+    if (this.onBubbleAnimate) {
+      this.scene.onAfterPhysicsObservable.remove(this.onBubbleAnimate);
+      this.onBubbleAnimate = null;
+    }
+  }
 
   protected release() {
     if (this.score) {
@@ -22,9 +38,10 @@ export class HUDGUI extends AbstractGUI {
       this.attempts = null;
     }
 
+    this.releaseBubble();
+
     super.release();
   }
-
   protected create() {
     super.create(2.5, 1.5);
 
@@ -101,51 +118,32 @@ export class HUDGUI extends AbstractGUI {
       return;
     }
 
-    const animateInsertBubble = () => {
-      const scene = this.plane.getScene();
-      const sphere = BABYLON.MeshBuilder.CreateSphere(
-        "sphere",
-        {
-          segments: 1,
-          diameter: 0.25
-        },
-        scene
-      );
-      this.plane.addChild(sphere);
+    const applyNextBubble = () => {
+      const bubble = this.resource.getBubble(color);
+      const bubbleInstance = bubble.createInstance(`${this.scene.getUniqueId()}`);
 
-      sphere.scaling.setAll(0);
-      sphere.position.set(0.65, 0.175, -0.1);
+      bubbleInstance.scaling.setAll(0);
+      bubbleInstance.position.set(0.65, 0.175, -0.1);
 
-      sphere.onBeforeDrawObservable.add(() => {
-        const p = 0.01; // Date.now() / 10000;
-        const a = new BABYLON.Vector3(Math.sin(p), Math.cos(p * 0.7), Math.cos(p * 0.4)).normalize();
+      this.onBubbleAnimate = this.scene.onAfterPhysicsObservable.add(() => {
+        const dt = 0.01;
+        const axis = new BABYLON.Vector3(Math.sin(dt), Math.cos(dt * 0.7), Math.cos(dt * 0.4)).normalize();
 
-        sphere.rotate(a, 0.05);
+        bubbleInstance.rotate(axis, dt);
       });
 
-      createAnimationEnter("scaling", sphere);
+      applyAnimation(bubbleInstance, AnimationSpringOpen);
 
-      const material = new BABYLON.StandardMaterial(`bubble.material`, scene);
-      material.disableLighting = true;
-      material.emissiveColor = BABYLON.Color3.White();
-      material.diffuseColor = BABYLON.Color3.White();
-
-      applyColors(sphere, ColorMap.get(color));
-
-      sphere.material = material;
-
-      this.bubble = sphere;
+      this.bubbleInstance = bubbleInstance;
     };
 
-    if (this.bubble) {
-      createAnimationExit("scaling", this.bubble).onAnimationEndObservable.addOnce(() => {
-        this.plane.removeChild(this.bubble);
-        this.bubble.dispose();
-        this.bubble = null;
-        animateInsertBubble();
+    if (this.bubbleInstance) {
+      applyAnimation(this.bubbleInstance, AnimationSpringClose).onAnimationEndObservable.addOnce(() => {
+        this.releaseBubble();
+        applyNextBubble();
       });
     } else {
-      animateInsertBubble();
+      applyNextBubble();
     }
   }
 

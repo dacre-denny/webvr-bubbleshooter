@@ -1,4 +1,6 @@
 import * as BABYLON from "babylonjs";
+import { Colors, Bubble, ColorMap } from "../objects/bubble";
+import { applyColors } from "../utilities";
 
 export enum AssetSounds {
   SOUND_MUSIC = "./audio/music.mp3",
@@ -51,6 +53,32 @@ export class Resources {
     material.disableLighting = true;
     material.fogEnabled = false;
     material.freeze();
+  }
+
+  private createMeshes() {
+    const createBubble = (color: Colors) => {
+      const mesh = BABYLON.MeshBuilder.CreateSphere(
+        `mesh.bubble.${color}`,
+        {
+          segments: 1,
+          diameter: Bubble.RADIUS * 2,
+          updatable: true
+        },
+        this.scene
+      );
+
+      applyColors(mesh, ColorMap.get(color));
+
+      mesh.material = this.scene.getMaterialByName("material");
+      mesh.isVisible = false;
+    };
+
+    createBubble(Colors.BLUE);
+    createBubble(Colors.GREEN);
+    createBubble(Colors.ORANGE);
+    createBubble(Colors.PURPLE);
+    createBubble(Colors.RED);
+    createBubble(Colors.YELLOW);
   }
 
   private loadAssets() {
@@ -107,10 +135,15 @@ export class Resources {
     return this.material;
   }
 
+  public getBubble(color: Colors) {
+    return this.scene.getMeshByName(`mesh.bubble.${color}`) as BABYLON.Mesh;
+  }
+
   public loadResources() {
     this.release();
 
     this.createMaterial();
+    this.createMeshes();
 
     return this.loadAssets();
   }
