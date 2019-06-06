@@ -25,7 +25,7 @@ export class Game {
   private player: Player;
   private level: Level;
 
-  private gameScore: number;
+  // private gameScore: number;
 
   constructor(canvasElement: string) {
     const canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -172,10 +172,10 @@ export class Game {
     });
   }
 
-  private showGameOver() {
+  private showGameOver(gameScore: number) {
     // Create and display game over GUI
     const gameOver = new GameOverGUI(this.scene, this.resources);
-    gameOver.setScore(this.gameScore);
+    gameOver.setScore(gameScore);
     gameOver.open();
 
     // Reset and bind loading menu placement to user movement
@@ -195,11 +195,10 @@ export class Game {
   }
 
   private showGame() {
-    this.gameScore = 0;
-
     const bubbleFactory = new BubbleFactory(this.scene);
     this.level.insertBubbleLayer(bubbleFactory);
 
+    let gameScore = 0;
     let nextBubbleColor = randomColor();
     let shotAttempts = Game.SHOT_ATTEMPTS;
     let shotBubble: Bubble = null;
@@ -302,9 +301,9 @@ export class Game {
         // If bubbles to burst have been found, add to the burst queue
         pluckedBubbles.forEach(pluckedBubble =>
           burstQue.add(() => {
-            this.gameScore += Game.SHOOT_POWER;
+            gameScore += Game.SHOOT_POWER;
 
-            hud.setScore(this.gameScore);
+            hud.setScore(gameScore);
             this.resources.getSound(AssetSounds.SOUND_POP).play();
 
             onDestroyBubble(pluckedBubble);
@@ -324,7 +323,7 @@ export class Game {
 
         hud.onClose.addOnce(() => {
           // Game over condition reached
-          this.showGameOver();
+          this.showGameOver(gameScore);
         });
         hud.close();
       }
@@ -335,7 +334,7 @@ export class Game {
 
     hud.open();
     hud.setBubble(nextBubbleColor);
-    hud.setScore(this.gameScore);
+    hud.setScore(gameScore);
     hud.setAttempts(100);
 
     setTimeout(() => hud.setScore(10), 250);

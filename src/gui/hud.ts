@@ -1,13 +1,12 @@
 import * as BABYLON from "babylonjs";
 import * as GUI from "babylonjs-gui";
 import { Theme } from "../assets";
-import { Colors, ColorMap } from "../objects/bubble";
-import { createAnimationEnter, createAnimationExit, applyColors, clockTime } from "../utilities";
+import { Colors } from "../objects/bubble";
+import { AnimationSpringClose, AnimationSpringOpen, applyAnimation } from "../services/animations";
 import { AbstractGUI } from "./gui";
-import { applyAnimation, AnimationSpringOpen, AnimationSpringClose } from "../services/animations";
 
 export class HUDGUI extends AbstractGUI {
-  protected onBubbleAnimate: BABYLON.Observer<BABYLON.Scene>;
+  private onBubbleAnimate: BABYLON.Observer<BABYLON.Scene>;
   private attempts: GUI.Rectangle;
   private bubbleInstance: BABYLON.InstancedMesh;
   private score: GUI.TextBlock;
@@ -42,6 +41,7 @@ export class HUDGUI extends AbstractGUI {
 
     super.release();
   }
+
   protected create() {
     super.create(2.5, 1.5);
 
@@ -62,7 +62,7 @@ export class HUDGUI extends AbstractGUI {
     textScore.paddingLeftInPixels = 15;
     glass.addControl(textScore);
 
-    // Add shot attemps bar to glass background
+    // Add shot attempt bar to glass background
     const attempts = this.createProgressBlock();
     attempts.wrapper.topInPixels = 35;
     glass.addControl(attempts.wrapper);
