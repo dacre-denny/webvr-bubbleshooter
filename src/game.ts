@@ -3,11 +3,12 @@ import { BubbleFactory } from "./bubbleFactory";
 import { GameOverGUI, HUDGUI, LoadingGUI, MenuGUI } from "./gui";
 import { Bubble } from "./objects/bubble";
 import { Level } from "./objects/level";
-import { Particles, CannonParticles } from "./services/particles";
+import { Particles } from "./services/particles";
 import { Player } from "./objects/player";
 import { ActionQueue } from "./objects/queue";
 import { AssetSounds, Resources } from "./services/resources";
 import { randomColor } from "./utilities";
+import { CannonParticles } from "./particles/cannon";
 
 export class Game {
   static readonly SHOOT_POWER = 10;
@@ -203,7 +204,7 @@ export class Game {
     let shotAttempts = Game.SHOT_ATTEMPTS;
     let shotBubble: Bubble = null;
 
-    const shoot = new CannonParticles(this.scene, this.resources);
+    const cannonParticles = new CannonParticles(this.scene, this.resources);
     const burstQue = new ActionQueue();
     const hud = new HUDGUI(this.scene, this.resources);
 
@@ -216,10 +217,6 @@ export class Game {
       }
       return true;
     };
-
-    setInterval(() => {
-      shoot.shoot(this.player.getPosition(), this.player.getDirection(), BABYLON.Color3.Green());
-    }, 1000);
 
     const onCleanUp = () => {
       this.onUserMoveObservable.clear();
@@ -261,9 +258,7 @@ export class Game {
         bubble.setPosition(this.player.getPosition());
         bubble.setVelocity(this.player.getDirection().scale(Game.SHOOT_POWER));
 
-        shoot.shoot(this.player.getPosition(), this.player.getDirection(), bubble.getColor3());
-
-        // Particles.createShoot(this.scene, this.player.getPosition().add(this.player.getDirection().scale(2)), this.player.getDirection(), bubble.getColor3());
+        cannonParticles.shoot(this.player.getPosition(), this.player.getDirection(), bubble.getColor3());
 
         this.resources.getSound(AssetSounds.SOUND_SHOOT).play();
 
