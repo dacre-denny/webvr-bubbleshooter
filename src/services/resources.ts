@@ -12,7 +12,9 @@ export enum AssetSounds {
 
 export enum AssetTextures {
   IMAGE_GAMEEND = "./images/game-end.png",
-  IMAGE_GAMETITLE = "./images/game-title.png"
+  IMAGE_GAMETITLE = "./images/game-title.png",
+  PARTICLE_BUBBLEBURST = "./images/particle-bubble-burst.png",
+  PARTICLE_CONFETTI = "./images/particle-confetti.png"
 }
 
 /**

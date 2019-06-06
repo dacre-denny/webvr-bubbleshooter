@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { Particles } from "./particles";
+import { Particles } from "../services/particles";
 import { createAnimationExit } from "../utilities";
 
 export enum Colors {

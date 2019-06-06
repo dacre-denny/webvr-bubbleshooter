@@ -7,9 +7,17 @@ import { AbstractGUI } from "./gui";
 
 export class HUDGUI extends AbstractGUI {
   private onBubbleAnimate: BABYLON.Observer<BABYLON.Scene>;
+  private onScoreAnimate: BABYLON.Observer<BABYLON.Scene>;
   private attempts: GUI.Rectangle;
   private bubbleInstance: BABYLON.InstancedMesh;
   private score: GUI.TextBlock;
+
+  private releaseCounter() {
+    if (this.onScoreAnimate) {
+      this.scene.onAfterPhysicsObservable.remove(this.onScoreAnimate);
+      this.onScoreAnimate = null;
+    }
+  }
 
   private releaseBubble() {
     if (this.bubbleInstance) {
@@ -56,18 +64,18 @@ export class HUDGUI extends AbstractGUI {
     panel.addControl(glass);
 
     // Add score display to glass background
-    const textScore = this.createTextBlock(``, 60, Theme.COLOR_BLUE);
-    textScore.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    textScore.topInPixels = -25;
-    textScore.paddingLeftInPixels = 15;
-    glass.addControl(textScore);
+    const score = this.createTextBlock(``, 60, Theme.COLOR_BLUE);
+    score.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    score.topInPixels = -25;
+    score.paddingLeftInPixels = 15;
+    glass.addControl(score);
 
     // Add shot attempt bar to glass background
     const attempts = this.createProgressBlock();
     attempts.wrapper.topInPixels = 35;
     glass.addControl(attempts.wrapper);
 
-    this.score = textScore;
+    this.score = score;
     this.attempts = attempts.inner;
   }
 
@@ -100,13 +108,15 @@ export class HUDGUI extends AbstractGUI {
       startScore = 0;
     }
 
-    const counter = this.plane.onBeforeDrawObservable.add(() => {
+    this.releaseCounter();
+
+    this.onScoreAnimate = this.scene.onAfterPhysicsObservable.add(() => {
       frac += 0.025 * (1 - frac * frac);
 
       const displayScore = Math.min(score, Math.ceil(frac * (score - startScore) + startScore));
 
       if (displayScore === score) {
-        this.plane.onBeforeDrawObservable.remove(counter);
+        this.releaseCounter();
       }
 
       this.score.text = `${displayScore}`;
